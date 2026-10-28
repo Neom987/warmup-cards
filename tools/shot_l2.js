@@ -1,0 +1,24 @@
+const puppeteer = require("puppeteer-core");
+const path = require("path");
+const EDGE = "C://Program Files (x86)//Microsoft//Edge//Application//msedge.exe";
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+(async () => {
+  const b = await puppeteer.launch({ executablePath: EDGE, headless: "new", args: ["--allow-file-access-from-files","--hide-scrollbars"] });
+  const p = await b.newPage();
+  await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const url = "file:///" + path.resolve(__dirname, "..", "情侣升温卡.html").replace(/\\/g, "/");
+  await p.goto(url, { waitUntil: "load" });
+  await p.evaluate(() => localStorage.clear());
+  await p.reload({ waitUntil: "load" });
+  await sleep(400);
+  const click = async (s) => { await p.evaluate((x) => { const e = document.querySelector(x); if (e) e.click(); }, s); await sleep(300); };
+  await click("#agreeRow"); await click("#startBtn"); await sleep(400);
+  await p.click("#card"); await sleep(700);
+  await click("#upBtn"); await sleep(500);
+  await click("#actOk"); await sleep(500);
+  await p.click("#card"); await sleep(800);
+  const t = await p.evaluate(() => ({ act: document.getElementById("actName").textContent, title: document.getElementById("cTitle").textContent, text: document.getElementById("cText").textContent }));
+  await p.screenshot({ path: path.join(__dirname, "..", "shots", "l2-card.png") });
+  console.log(JSON.stringify(t, null, 1));
+  await b.close();
+})();
