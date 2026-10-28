@@ -1,0 +1,5 @@
+# 统一换行，避免 Windows 提交时把 CRLF 转成 LF 导致产物与本地不一致
+* text=auto eol=lf
+
+# index.html 是构建产物，按字节原样入库，不做任何换行转换
+index.html -text
