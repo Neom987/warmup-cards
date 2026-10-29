@@ -5,7 +5,7 @@ const fs = require("fs");
 const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
 const SHOTS = path.join(__dirname, "..", "shots");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const URL = "file:///" + path.resolve(__dirname, "..", "情侣升温卡.html").replace(/\\/g, "/");
+const URL = "file:///" + path.resolve(__dirname, "..", "index.html").replace(/\\/g, "/");
 
 async function run(browser, w, h, tag) {
   const page = await browser.newPage();

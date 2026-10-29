@@ -10,7 +10,7 @@ const GKEY = "csc.v3.game";
   const browser = await puppeteer.launch({ executablePath: EDGE, headless: "new", args: ["--allow-file-access-from-files"] });
   const page = await browser.newPage();
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-  const url = "file:///" + path.resolve(__dirname, "..", "情侣升温卡.html").replace(/\\/g, "/");
+  const url = "file:///" + path.resolve(__dirname, "..", "index.html").replace(/\\/g, "/");
 
   await page.goto(url, { waitUntil: "load" });
   await page.evaluate((k, g) => { localStorage.clear(); }, KEY, GKEY);

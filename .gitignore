@@ -1,32 +1,14 @@
-# 忽略构建中间产物与本地环境
+# 构建中间产物：字体源 TTF、导出稿、导入前备份
 tmp/
-shots/
 __pycache__/
 *.pyc
+
+# 回归脚本产出的截图
+shots/
+
+# 系统与编辑器
 .DS_Store
 Thumbs.db
-
-# 工具与编辑器
 .idea/
 .vscode/
 .workbuddy-ai/
-
-# 备份目录（体积大，且只是回滚用）
-tools/cards_backup_*/
-tools/*_backup_v*.json
-tools/*_backup_v*.html
-
-# 测试产物与一次性调试脚本
-tools/audit*.json
-tools/dbg.js
-tools/patch_ui.py
-
-# 会话交接、审计快照与一次性导出（只留本地）
-handoff/
-handoff-*.md
-cards-360-all-in-one-*.md
-tools/rewrite_tier*.py
-tools/export_all_cards.py
-
-# 中文命名的构建副本（仓库里用 index.html 作为入口）
-情侣升温卡.html

@@ -2,7 +2,7 @@
 """把 src/cards/*.json 内联进 src/app.html，产出一个可双击打开的单文件。
 
 用法： python build.py
-输出： 情侣升温卡.html
+输出： index.html（双击即玩，同时是 GitHub Pages 的入口）
 """
 import json
 import os
@@ -12,7 +12,7 @@ import sys
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CARDS = os.path.join(ROOT, "src", "cards")
 TEMPLATE = os.path.join(ROOT, "src", "app.html")
-OUT = os.path.join(ROOT, "情侣升温卡.html")
+OUT = os.path.join(ROOT, "index.html")
 
 TIER_META = {
     1: {"name": "调情", "act": "第一幕 · 调情", "desc": "接吻、抚摸、开始脱"},
@@ -107,9 +107,6 @@ def main():
         print("✗ 存在外部资源引用，单文件会失效")
 
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
-        f.write(html)
-    # GitHub Pages 需要一个干净的入口路径，复制一份 index.html
-    with open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
 
     size = os.path.getsize(OUT) / 1024

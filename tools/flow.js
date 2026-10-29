@@ -15,7 +15,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   page.on("pageerror", (e) => errs.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
 
-  const url = "file:///" + path.resolve(__dirname, "..", "情侣升温卡.html").replace(/\\/g, "/");
+  const url = "file:///" + path.resolve(__dirname, "..", "index.html").replace(/\\/g, "/");
   const shot = (n) => page.screenshot({ path: path.join(SHOTS, n) });
   const st = () => page.evaluate(() => ({
     screen: document.querySelector(".screen.on").id,

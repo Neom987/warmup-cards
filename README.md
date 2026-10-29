@@ -48,21 +48,27 @@
 ## 开发
 
 ```bash
-python tools/import_500.py   # 从 handoff/cards-500-2026-10-29.md 导入 500 张基础卡
-python build.py            # 把 src/cards/*.json 内联进 src/app.html → index.html
-python check_cards.py      # 卡片校验：唯一性/字数/类别覆盖/近似重复/红线词/道具引用
-python tools/apply_theme.py  # 把 src/theme.css + src/font.css 内联进 <style>
-python tools/audit_content.py # 内容体检：跨档近似、词频、长度分布、缺主语
+python build.py              # src/cards/*.json + src/app.html → index.html（单文件）
+python check_cards.py        # 卡片校验：唯一性/字数/类别覆盖/近似重复/红线词/道具引用
+python tools/audit_content.py  # 内容体检：跨档近似、词频、长度分布、缺主语
+python tools/apply_theme.py    # 改完 src/theme.css 后重新内联进模板
+python tools/make_font.py      # 卡片新增生僻字后重建字体子集（首次会自动下载 TTF）
+python tools/import_500.py     # 从 data/cards-500-2026-10-29.md 重新导入基础卡
+python tools/export_all_cards.py  # 导出全部卡片为一份 Markdown，交给外部 AI 改写
 ```
 
 **目录**
 
 ```
+index.html          构建产物，双击即玩，同时是 Pages 入口
+build.py            JSON → 单文件
+check_cards.py      卡片校验
 src/app.html        应用模板（/*__DATA__*/ 是数据占位）
 src/theme.css       界面主题
 src/font.css        字体子集（base64 woff2，由 tools/make_font.py 生成）
 src/cards/          tier1..3.json 三档卡片 / props.json 道具
-tools/              构建、校验、改写、回归脚本
+data/               500 张卡片的原始 Markdown 稿（import_500.py 的输入）
+tools/              构建链、内容审计、回归脚本
 ```
 
 **字体**

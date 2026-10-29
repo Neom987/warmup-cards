@@ -14,7 +14,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const errs = [];
   page.on("pageerror", (e) => errs.push(e.message));
 
-  const url = "file:///" + path.resolve(__dirname, "..", "情侣升温卡.html").replace(/\\/g, "/");
+  const url = "file:///" + path.resolve(__dirname, "..", "index.html").replace(/\\/g, "/");
   await page.goto(url, { waitUntil: "load" });
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: "load" });

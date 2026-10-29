@@ -17,9 +17,9 @@ import sys
 from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SOURCE_LOCAL = os.path.join(ROOT, "handoff", "cards-500-2026-10-29.md")
+SOURCE_LOCAL = os.path.join(ROOT, "data", "cards-500-2026-10-29.md")
 SRC = SOURCE_LOCAL if os.path.exists(SOURCE_LOCAL) else r"C:\Users\neom\Desktop\locker\CARD\cards-500-2026-10-29.md"
-BACKUP = os.path.join(ROOT, "tools", "cards_backup_pre500")
+BACKUP = os.path.join(ROOT, "tmp", "cards_backup_pre500")
 CARDS_DIR = os.path.join(ROOT, "src", "cards")
 
 CAT_MAP = {

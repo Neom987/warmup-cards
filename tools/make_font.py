@@ -19,6 +19,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "src")
 CARDS = os.path.join(SRC, "cards")
 TTF = os.path.join(ROOT, "tmp", "wenkai-regular.ttf")
+TTF_URL = "https://fastly.jsdelivr.net/gh/lxgw/LxgwWenKai@v1.510/fonts/TTF/LXGWWenKai-Regular.ttf"
 OUT = os.path.join(SRC, "font.css")
 
 # 兜底字符：ASCII + 中文标点 + 数字符号，保证界面文案不会掉字
@@ -46,9 +47,26 @@ def collect_chars():
     return "".join(sorted(chars))
 
 
+def ensure_ttf():
+    """字体源 TTF 不随仓库分发（19 MB），缺失时按需下载到 tmp/。"""
+    if os.path.exists(TTF):
+        return True
+    os.makedirs(os.path.dirname(TTF), exist_ok=True)
+    print(f"↓ 下载字体源（约 19 MB）：{TTF_URL}")
+    try:
+        import urllib.request
+        with urllib.request.urlopen(TTF_URL, timeout=600) as r, open(TTF, "wb") as f:
+            f.write(r.read())
+    except Exception as e:
+        print(f"!! 下载失败：{e}")
+        print(f"   请手动下载后放到 {TTF}")
+        return False
+    print(f"✓ 已下载 {os.path.getsize(TTF) / 1048576:.1f} MB")
+    return True
+
+
 def main():
-    if not os.path.exists(TTF):
-        print(f"!! 找不到 {TTF}")
+    if not ensure_ttf():
         return 1
 
     chars = collect_chars()
