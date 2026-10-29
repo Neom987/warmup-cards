@@ -378,6 +378,11 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 .acts .primary:disabled{
   background:var(--room3); color:var(--dim2); box-shadow:none;
 }
+/* 「这张放下了」不需要一颗亮桃色的按钮——那读起来像奖励 */
+.acts .primary.quiet{
+  background:var(--room3); color:#C4B2BC; box-shadow:none;
+  border:1px solid var(--line2);
+}
 
 /* 三选一：两个人都要选，所以三个按钮等重——没有主按钮。
    「做」偏桃、「轻一点」偏薄荷、「不做」走中性灰。
@@ -1556,8 +1561,12 @@ function revealChoices() {
   $("reveal").classList.add("on");
   $("cardFront").classList.add("revealed");
   $("doneBtn").textContent = v === "no" ? "换一张" : "下一张";
+  $("doneBtn").classList.toggle("quiet", v === "no");
   updateButtons();
   fitText();
+  /* 光在揭晓这一刻放，不在「下一张」放——那一拍才是这一张的落点。
+     「不做」不放光：放下不需要被庆祝，也不需要被惩罚。 */
+  if (v !== "no") bloom();
 
   if (!RM) {
     anime.remove("#reveal .rv, #reveal .rvres");
@@ -1568,6 +1577,11 @@ function revealChoices() {
     anime({
       targets: "#reveal .rvres", opacity: [0, 1], translateY: [6, 0],
       duration: 460, delay: blind ? 60 : 260, easing: "easeOutCubic"
+    });
+    /* 合拍多给一下：答案一样是这个玩法里唯一值得庆祝的事 */
+    if (same) anime({
+      targets: "#reveal .rvres", scale: [1, 1.06, 1], duration: 520,
+      delay: blind ? 0 : 320, easing: "easeOutQuad"
     });
   }
 }
@@ -1751,7 +1765,7 @@ function doComplete() {
   if (c.effect === "eyes") G.eyes = 1;
   if (c.effect === "pick") G.pickNext = true;
   buzz(12);
-  bloom();
+  /* 光已经在揭晓那一刻放过了，这里只收尾 */
   if (G.target && G.done >= G.target) { endGame(); return; }
   if (G.tierDone >= 10) {
     if (G.tier < P.maxTier) { G.tier++; G.tierDone = 0; showAct(); return; }
