@@ -16,8 +16,8 @@ OUT = os.path.join(ROOT, "情侣升温卡.html")
 
 TIER_META = {
     1: {"name": "调情", "act": "第一幕 · 调情", "desc": "接吻、抚摸、开始脱"},
-    2: {"name": "升温", "act": "第二幕 · 升温", "desc": "口、手指、节奏"},
-    3: {"name": "深处", "act": "第三幕 · 深处", "desc": "束缚、边缘、掌控"},
+    2: {"name": "升温", "act": "第二幕 · 升温", "desc": "口、手、边缘"},
+    3: {"name": "深处", "act": "第三幕 · 深处", "desc": "进入、节奏、掌控"},
 }
 CAT_META = {
     "say": {"name": "语言撩拨", "color": "#c9738a"},
@@ -99,15 +99,17 @@ def main():
         print("✗ 模板里找不到 /*__DATA__*/ 占位")
         return 1
     html = html.replace("/*__DATA__*/", payload)
+    # 去掉行尾空白，避免 git diff --check 把生成文件判成脏改动。
+    html = "\n".join(line.rstrip() for line in html.splitlines()) + "\n"
 
     # 保险：确认没有残留外链资源
     if re.search(r'<(script|link)[^>]+(src|href)="https?://', html):
         print("✗ 存在外部资源引用，单文件会失效")
 
-    with open(OUT, "w", encoding="utf-8") as f:
+    with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
     # GitHub Pages 需要一个干净的入口路径，复制一份 index.html
-    with open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8") as f:
+    with open(os.path.join(ROOT, "index.html"), "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
 
     size = os.path.getsize(OUT) / 1024

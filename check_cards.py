@@ -20,7 +20,7 @@ CAT_NAMES = {
     "truth": "真心话", "command": "指令掌控",
 }
 WHO = {"drawer", "partner", "both", "random"}
-PER_TIER = 120
+EXPECTED = {1: 120, 2: 156, 3: 224}
 MIN_PER_CAT = 4
 SIM_THRESHOLD = 0.86
 TEXT_MIN, TEXT_MAX = 8, 90
@@ -73,8 +73,8 @@ def main():
     all_cards, titles = [], {}
     for t in TIERS:
         data = load_json(f"tier{t}.json", [])
-        if len(data) != PER_TIER:
-            errors.append(f"[L{t}] 张数 {len(data)}，应为 {PER_TIER}")
+        if len(data) != EXPECTED[t]:
+            errors.append(f"[L{t}] 张数 {len(data)}，应为 {EXPECTED[t]}")
         cat_count = {c: 0 for c in CATS}
         for i, c in enumerate(data):
             loc = f"L{t}#{i + 1}"
