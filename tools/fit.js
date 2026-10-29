@@ -9,6 +9,23 @@ const URL = "file:///" + path.resolve(__dirname, "..", "index.html").replace(/\\
 
 async function run(browser, w, h, tag) {
   const page = await browser.newPage();
+
+  /* 规则卡「挑一张」会弹一个必须选的浮层。回归脚本不关心选哪张，
+     所以每次点击前先把它选掉，否则会随机卡住后续步骤。 */
+  const _click = page.click.bind(page);
+  page.click = async (sel, ...rest) => {
+    if (await page.evaluate(() => {
+      const el = document.getElementById("ovPick");
+      return !!el && el.classList.contains("on");
+    })) {
+      await page.evaluate(() => {
+        const b = document.querySelector("#pickList button");
+        if (b) b.click();
+      });
+      await new Promise((r) => setTimeout(r, 350));
+    }
+    return _click(sel, ...rest);
+  };
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   const errs = [];
   page.on("pageerror", (e) => errs.push(e.message));

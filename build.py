@@ -28,7 +28,31 @@ CAT_META = {
     "scene": {"name": "场景氛围", "color": "#7FE0B0"},
     "truth": {"name": "真心话", "color": "#FFD37A"},
     "command": {"name": "指令掌控", "color": "#C08CFF"},
+    # 规则卡不是牌库里的卡，用近白的中性色，房间的光会跟着变淡——
+    # 让「这一张不是牌，是规则」在视觉上立刻成立
+    "rule": {"name": "规则", "color": "#E9DCE6"},
 }
+
+# 规则卡：每 7 张普通卡插一张，改的是这一局的规则而不是内容。
+# 五种全部是「降级或增权」，没有一种是加码——这类游戏真正缺的是
+# 控制感和呼吸，不是强度。
+RULES = [
+    {"id": "breath", "effect": "breath", "title": "停一下", "dur": 60, "who": "both",
+     "text": "抱住，什么都不做。六十秒。谁都不用说话。",
+     "alt": "不想抱就牵着手，一样六十秒。"},
+    {"id": "silent", "effect": "silence", "title": "不说话", "who": "both",
+     "text": "接下来两张，只用动作和眼神。说「停」不算破例。",
+     "alt": "想说话就说，没人会记着。"},
+    {"id": "tell", "effect": "tell", "title": "说一件", "who": "both",
+     "text": "各说一件今天没来得及说的小事。对方只听着，不接话。",
+     "alt": "想不出来，就说今天最想吃什么。"},
+    {"id": "pick", "effect": "pick", "title": "挑一张", "who": "both",
+     "text": "下一张，从三张里挑。另外两张放回牌堆，跳过次数不变。",
+     "alt": "不想挑就直接抽，一样算。"},
+    {"id": "eyes", "effect": "eyes", "title": "闭上眼", "who": "both",
+     "text": "下一张，闭着眼做。做完再睁开。",
+     "alt": "不想闭眼，就让对方的手盖住你的眼睛。"},
+]
 BOUNDS = [
     {"key": "body", "name": "触碰：胸口、大腿"},
     {"key": "kiss", "name": "亲吻：嘴唇、身体"},
@@ -90,6 +114,7 @@ def main():
         "cats": CAT_META,
         "props": props_doc["props"],
         "bounds": BOUNDS,
+        "rules": RULES,
         "cards": cards,
     }
 

@@ -223,6 +223,10 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 .ldots i{width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.11); transition:background .3s}
 .ldots i.on{background:var(--ink); opacity:.85}
 .ldots em{font-style:normal; font-family:var(--label); font-size:9.5px; letter-spacing:.12em; color:var(--peach)}
+.ldots em.rulestate{
+  color:var(--ink); letter-spacing:.06em; padding:3px 10px; border-radius:999px;
+  border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06);
+}
 
 /* ---------- 卡面 ---------- */
 .stage{
@@ -276,6 +280,14 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 .face.back .no{position:absolute; bottom:26px; font-family:var(--mono); font-size:10px; letter-spacing:.18em; color:#7A6472}
 
 /* 正面：卡 */
+.face.front.rule{border-style:dashed; border-color:rgba(255,255,255,.22)}
+/* 规则卡不参与颜色系统：它不改变房间的光，卡片自己走一套中性色。
+   房间的光由「真正打过的牌」决定，这一张是插进来的规则。 */
+.face.front.rule .ctab{background:#E9DCE6}
+.face.front.rule .ctitle{color:#E9DCE6}
+.face.front.rule .tag.cat{background:#E9DCE6; color:#2A0F1A}
+.face.front.rule .mark{color:#E9DCE6}
+.face.front.rule::after{background:linear-gradient(148deg,#E9DCE6,#B9A6C6); opacity:.16}
 .face.front{
   transform:rotateY(180deg);
   background:linear-gradient(172deg,#2B1A2E,#1D1219 66%,#180E17);
@@ -387,6 +399,19 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 .panel .row button.pri{background:linear-gradient(120deg,var(--peach),var(--peach2)); color:var(--ink-on); border:0}
 .bigact{font-size:27px; letter-spacing:.04em; font-weight:400; margin-top:6px}
 .bigact small{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.3em; color:var(--peach); font-weight:400; margin-top:10px}
+
+/* 三选一：三个选项，类别色点 + 标题 + 档位 */
+.picklist{margin-top:18px; display:flex; flex-direction:column; gap:8px}
+.picklist button{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  padding:15px; border-radius:16px; border:1px solid var(--line2);
+  background:var(--room3); color:var(--ink); font-family:var(--body); font-size:14px;
+  cursor:pointer; transition:background .16s, border-color .16s, transform .12s;
+}
+.picklist button:active{transform:scale(.985); background:#31203a; border-color:rgba(255,255,255,.24)}
+.picklist button i{flex:0 0 auto; width:8px; height:8px; border-radius:50%}
+.picklist button span{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:.02em}
+.picklist button em{flex:0 0 auto; font-style:normal; font-family:var(--label); font-size:10px; color:var(--dim2); letter-spacing:.08em}
 
 /* ---------- 结束页 ---------- */
 .stats{display:flex; gap:9px; margin-top:22px}
@@ -572,6 +597,14 @@ body.bright-3{--go:.12}
       <div class="seg" id="segCount"></div>
     </div>
 
+    <div class="block">
+      <div class="label">中途插规则卡 <em>每 7 张普通卡</em></div>
+      <div class="chips">
+        <div class="chip" id="ruleChip">加规则卡<small>停一下 · 不说话 · 说一件 · 挑一张 · 闭上眼</small></div>
+      </div>
+      <div class="sub" style="margin-top:8px">规则卡不在牌库里，是中途插进来的一张，改的是这一局的规则而不是内容。做完自动回到普通牌。</div>
+    </div>
+
     <div class="agree" id="agreeRow">
       <div class="box" id="agreeBox">✓</div>
       <div>我们已经商量过：任何一方说停就停，不需要理由，也不追问。</div>
@@ -725,6 +758,15 @@ body.bright-3{--go:.12}
   </div>
 </div>
 
+<div class="ov" id="ovPick">
+  <div class="panel">
+    <div class="k">挑一张</div>
+    <div class="bigact" style="font-size:19px">三张里选一张<small>PICK ONE</small></div>
+    <p>另外两张放回牌堆。跳过次数不变。</p>
+    <div class="picklist" id="pickList"></div>
+  </div>
+</div>
+
 <div id="veil"></div>
 <div id="toast"></div>
 
@@ -741,11 +783,11 @@ var D = window.__DATA__;
 var LS = "csc.v3";        // 偏好与历史
 var SK = "csc.v3.game";   // 进行中的一局
 var CATS = D.cats, TIERS = D.tiers;
-var MARK = { say: "语", gaze: "眼", touch: "触", scene: "景", truth: "真", command: "令" };
+var MARK = { say: "语", gaze: "眼", touch: "触", scene: "景", truth: "真", command: "令", rule: "规" };
 var ACT_EN = { 1: "ACT I", 2: "ACT II", 3: "ACT III" };
 
 /* ---------- 存储 ---------- */
-var P = { history: [], favs: [], props: [], names: ["", ""], maxTier: 3, bounds: {}, favOnly: false, agree: false, bright: 0, fs: 1, advOpen: false };
+var P = { history: [], favs: [], props: [], names: ["", ""], maxTier: 3, bounds: {}, favOnly: false, agree: false, bright: 0, fs: 1, advOpen: false, rules: true };
 try {
   var raw = localStorage.getItem(LS);
   if (raw) { var o = JSON.parse(raw); for (var k in o) if (k in P) P[k] = o[k]; }
@@ -975,6 +1017,7 @@ function buildSetup() {
     row.appendChild(tri); bd.appendChild(row);
   });
 
+  $("ruleChip").classList.toggle("on", !!P.rules);
   $("agreeBox").classList.toggle("on", !!P.agree);
   $("startBtn").disabled = false;
   $("startBtn").classList.toggle("muted", !P.agree);
@@ -1001,6 +1044,7 @@ $("resetBtn").onclick = function () {
   P.history = []; saveP(); buildSetup(); toast("已清空，全部卡片重新入池");
 };
 $("favOnly").onclick = function () { P.favOnly = !P.favOnly; saveP(); buildSetup(); };
+$("ruleChip").onclick = function () { P.rules = !P.rules; saveP(); buildSetup(); };
 $("n1").oninput = function () { P.names[0] = this.value.trim(); saveP(); };
 $("n2").oninput = function () { P.names[1] = this.value.trim(); saveP(); };
 
@@ -1013,7 +1057,9 @@ function syncSession() {
     tier: G.tier, done: G.done, skip: G.skip, tierDone: G.tierDone, target: G.target,
     used: Object.keys(G.used), cur: G.card ? G.card.id : null, favOnly: !!P.favOnly,
     log: G.log.map(function (r) { return r.id; }), lead: G.lead,
-    mainProp: G.mainProp || null, sinceProp: G.sinceProp || 0
+    mainProp: G.mainProp || null, sinceProp: G.sinceProp || 0,
+    sinceRule: G.sinceRule || 0, lastRule: G.lastRule || null, ruleSeq: G.ruleSeq || 0,
+    silent: G.silent || 0, eyes: G.eyes || 0, pickNext: !!G.pickNext
   });
 }
 
@@ -1028,7 +1074,8 @@ function startGame() {
     tier: 1, done: 0, skip: 3, tierDone: 0, target: G_TARGET,
     used: {}, q: { 1: [], 2: [], 3: [] }, card: null, flip: false, last: null,
     hist: P.history.slice(), log: [], lead: Math.random() < 0.5 ? 0 : 1,
-    mainProp: pickMainProp(), sinceProp: 0
+    mainProp: pickMainProp(), sinceProp: 0,
+    sinceRule: 0, lastRule: null, ruleSeq: 0, silent: 0, eyes: 0, pickNext: false
   };
   show("s-game");
   nextCard();
@@ -1048,7 +1095,9 @@ function resumeGame() {
     lead: (o.lead === 0 || o.lead === 1) ? o.lead : (Math.random() < 0.5 ? 0 : 1),
     mainProp: o.mainProp && D.props.some(function (p) { return p.key === o.mainProp; })
       ? o.mainProp : pickMainProp(),
-    sinceProp: o.sinceProp || 0
+    sinceProp: o.sinceProp || 0,
+    sinceRule: o.sinceRule || 0, lastRule: o.lastRule || null, ruleSeq: o.ruleSeq || 0,
+    silent: o.silent || 0, eyes: o.eyes || 0, pickNext: !!o.pickNext
   };
   (o.used || []).forEach(function (id) { G.used[id] = 1; });
   (o.log || []).forEach(function (id) {
@@ -1110,13 +1159,91 @@ function pick(t) {
   if (!G.q[t] || !G.q[t].length) refill(t);
   return G.q[t].length ? G.q[t].shift() : null;
 }
-function nextCard() {
-  var c = null;
-  /* 道具节奏：连续 4 张普通卡之后，插一张道具卡 */
-  if (P.props.length && G.sinceProp >= PROP_EVERY) {
-    c = takeProp(G.tier);
-    if (c) G.sinceProp = 0;
+/* ---------- 规则卡 ---------- */
+/* 规则卡不在牌库里，是中途插进来的一张：改的是这一局的规则，不是内容。
+   五种全部是「降级或增权」，没有一种是加码——这类游戏真正缺的是
+   控制感和呼吸，不是强度。 */
+var RULE_EVERY = 7;
+
+function takeRule() {
+  var pool = D.rules.filter(function (r) {
+    /* 遮挡划了「不要」就不出「闭上眼」——边界清单要管到规则层 */
+    if (r.effect === "eyes" && P.bounds.hide === "no") return false;
+    return r.id !== G.lastRule;
+  });
+  if (!pool.length) return null;
+  var r = pickOne(pool);
+  G.lastRule = r.id; G.ruleSeq++;
+  var c = {
+    id: "rule-" + r.id + "-" + G.ruleSeq, kind: "rule", effect: r.effect,
+    tier: G.tier, cat: "rule", title: r.title, text: r.text,
+    who: r.who || "both", alt: r.alt
+  };
+  if (r.dur) c.dur = r.dur;
+  return c;
+}
+
+function deal(c) {
+  if (c.kind === "rule") {
+    G.sinceRule = 0;
+  } else {
+    G.used[c.id] = 1;
+    G.sinceRule++;
+    if (isPropCard(c)) G.sinceProp = 0; else G.sinceProp++;
   }
+  G.card = c; G.flip = false;
+  renderCard();
+}
+
+/* 三选一：把「抽到什么做什么」变成「我们一起选」。
+   没选的两张留在队列里，之后照常出现，不浪费。 */
+function offerPick() {
+  var t = G.tier;
+  if (!G.q[t] || G.q[t].length < 3) refill(t);
+  var q = G.q[t] || [];
+  /* 先按类别去重：三张同类别等于没得选，选择的价值在「不一样」 */
+  var pool = [], seen = {};
+  for (var i = 0; i < q.length && pool.length < 3; i++) {
+    if (seen[q[i].cat]) continue;
+    seen[q[i].cat] = 1; pool.push(q[i]);
+  }
+  for (var j = 0; j < q.length && pool.length < 3; j++) {
+    if (pool.indexOf(q[j]) < 0) pool.push(q[j]);
+  }
+  if (pool.length < 2) { nextCard(); return; }
+  var list = $("pickList"); list.innerHTML = "";
+  pool.forEach(function (c) {
+    var b = document.createElement("button");
+    var dot = document.createElement("i"); dot.style.background = CATS[c.cat].color;
+    var nm = document.createElement("span"); nm.textContent = c.title;
+    var tr = document.createElement("em"); tr.textContent = TIERS[c.tier].name;
+    b.appendChild(dot); b.appendChild(nm); b.appendChild(tr);
+    b.onclick = function () {
+      $("ovPick").classList.remove("on");
+      var i = G.q[t].indexOf(c);
+      if (i >= 0) G.q[t].splice(i, 1);
+      deal(c);
+    };
+    list.appendChild(b);
+  });
+  $("ovPick").classList.add("on");
+}
+
+/* 当前生效的规则状态，占的是那十个进度点的位置 */
+function ruleState() {
+  var out = [];
+  if (G.eyes > 0) out.push("闭上眼");
+  if (G.silent > 0) out.push("不说话 " + G.silent);
+  return out.join(" · ");
+}
+
+function nextCard() {
+  if (G.pickNext) { G.pickNext = false; offerPick(); return; }
+  var c = null;
+  /* 规则卡节奏：每 7 张普通卡之后插一张 */
+  if (P.rules && G.sinceRule >= RULE_EVERY) c = takeRule();
+  /* 道具节奏：连续 4 张普通卡之后，插一张道具卡 */
+  if (!c && P.props.length && G.sinceProp >= PROP_EVERY) c = takeProp(G.tier);
   if (!c) c = pick(G.tier);
   if (!c) {
     /* 本档没牌了：相邻档随机挑一个，而不是固定先降后升 */
@@ -1126,9 +1253,7 @@ function nextCard() {
     while (!c && opts.length) c = pick(opts.splice(Math.floor(Math.random() * opts.length), 1)[0]);
   }
   if (!c) { endGame(true); return; }
-  if (isPropCard(c)) G.sinceProp = 0; else G.sinceProp++;
-  G.card = c; G.used[c.id] = 1; G.flip = false;
-  renderCard();
+  deal(c);
 }
 
 function renderCard() {
@@ -1142,11 +1267,17 @@ function renderCard() {
   resetSwipe();
   /* 房间跟着卡换颜色：--cc 立刻切（卡上已经换好了），
      背后的光用 LCH 扫过去（光正在变）——两者不同步是故意的。 */
-  var gel = gelOf(c.cat, cat.color);
-  document.body.style.setProperty("--cc", gel.cc);
-  document.body.style.setProperty("--cc-ink", gel.ink);
-  document.body.style.setProperty("--g2", gel.g2);
-  sweepLight(gel.cc);
+  /* 规则卡不进颜色系统：它不改变房间的光，卡片自己走一套中性色。
+     房间的光由「真正打过的牌」决定，这一张只是插进来的规则。 */
+  var isRule = c.kind === "rule";
+  $("cardFront").classList.toggle("rule", isRule);
+  if (!isRule) {
+    var gel = gelOf(c.cat, cat.color);
+    document.body.style.setProperty("--cc", gel.cc);
+    document.body.style.setProperty("--cc-ink", gel.ink);
+    document.body.style.setProperty("--g2", gel.g2);
+    sweepLight(gel.cc);
+  }
   $("cMark").textContent = MARK[c.cat] || "";
   $("cCat").textContent = cat.name;
   $("cWho").textContent = whoText(c.who);
@@ -1232,7 +1363,11 @@ function renderHud() {
   lad.appendChild(seg);
 
   var dots = document.createElement("div"); dots.className = "ldots";
-  if (inLast) {
+  var rs = ruleState();
+  if (rs) {
+    /* 规则生效时，进度点让位给规则状态——两者都是「这一局现在什么样」 */
+    dots.innerHTML = "<em class='rulestate'>" + rs + "</em>";
+  } else if (inLast) {
     dots.innerHTML = "<em>最深</em>";
   } else {
     for (var k = 0; k < 10; k++) {
@@ -1387,13 +1522,24 @@ function flipCard() {
 function doComplete() {
   if (!G || !G.card || !G.flip) { toast("先翻牌"); return; }
   var c = G.card;
-  G.last = { cardId: c.id, done: G.done, tierDone: G.tierDone, tier: G.tier, skip: G.skip, sinceProp: G.sinceProp };
-  if (G.hist.indexOf(c.id) < 0) G.hist.push(c.id);
-  P.history.push(c.id);
-  if (P.history.length > 3000) P.history = P.history.slice(-3000);
-  saveP();
+  G.last = { cardId: c.id, done: G.done, tierDone: G.tierDone, tier: G.tier, skip: G.skip,
+             sinceProp: G.sinceProp, sinceRule: G.sinceRule, silent: G.silent,
+             eyes: G.eyes, pickNext: G.pickNext };
+  /* 规则卡不是牌库里的牌，不进「已抽过」，也不进本局清单 */
+  if (c.kind !== "rule") {
+    if (G.hist.indexOf(c.id) < 0) G.hist.push(c.id);
+    P.history.push(c.id);
+    if (P.history.length > 3000) P.history = P.history.slice(-3000);
+    saveP();
+  }
   G.done++; G.tierDone++;
-  G.log.push({ id: c.id, cat: c.cat, tier: G.tier });
+  if (c.kind !== "rule") G.log.push({ id: c.id, cat: c.cat, tier: G.tier });
+  /* 先清掉上一张留下的规则状态，再让这一张的规则生效 */
+  if (G.silent > 0) G.silent--;
+  if (G.eyes > 0) G.eyes--;
+  if (c.effect === "silence") G.silent = 2;
+  if (c.effect === "eyes") G.eyes = 1;
+  if (c.effect === "pick") G.pickNext = true;
   buzz(12);
   bloom();
   if (G.target && G.done >= G.target) { endGame(); return; }
@@ -1409,7 +1555,11 @@ function doUndo() {
   var l = G.last; G.last = null;
   G.done = l.done; G.tierDone = l.tierDone; G.tier = l.tier;
   if (l.sinceProp !== undefined) G.sinceProp = l.sinceProp;
-  if (G.log.length) G.log.pop();
+  if (l.sinceRule !== undefined) G.sinceRule = l.sinceRule;
+  if (l.silent !== undefined) G.silent = l.silent;
+  if (l.eyes !== undefined) G.eyes = l.eyes;
+  if (l.pickNext !== undefined) G.pickNext = l.pickNext;
+  if (G.log.length && G.log[G.log.length - 1].id === l.cardId) G.log.pop();
   var c = D.cards.filter(function (x) { return x.id === l.cardId; })[0];
   var h = P.history.lastIndexOf(l.cardId);
   if (h >= 0) { P.history.splice(h, 1); saveP(); }
