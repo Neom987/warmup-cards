@@ -13,6 +13,8 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 CARDS = os.path.join(ROOT, "src", "cards")
 TEMPLATE = os.path.join(ROOT, "src", "app.html")
 OUT = os.path.join(ROOT, "index.html")
+VENDOR = os.path.join(ROOT, "src", "vendor")
+VENDOR_FILES = ("chroma.min.js", "anime.min.js")
 
 TIER_META = {
     1: {"name": "调情", "act": "第一幕 · 调情", "desc": "接吻、抚摸、开始脱"},
@@ -99,6 +101,20 @@ def main():
         print("✗ 模板里找不到 /*__DATA__*/ 占位")
         return 1
     html = html.replace("/*__DATA__*/", payload)
+
+    # 第三方库直接内联，保持「双击即玩、零网络请求」
+    if "/*__VENDOR__*/" not in html:
+        print("✗ 模板里找不到 /*__VENDOR__*/ 占位")
+        return 1
+    parts = []
+    for name in VENDOR_FILES:
+        path = os.path.join(VENDOR, name)
+        if not os.path.exists(path):
+            print(f"✗ 缺少 {os.path.join('src', 'vendor', name)}")
+            return 1
+        with open(path, encoding="utf-8") as f:
+            parts.append(f.read().strip())
+    html = html.replace("/*__VENDOR__*/", "\n".join(parts))
     # 去掉行尾空白，避免 git diff --check 把生成文件判成脏改动。
     html = "\n".join(line.rstrip() for line in html.splitlines()) + "\n"
 

@@ -234,7 +234,7 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 
 .card{
   position:relative; width:100%; max-width:420px; height:100%; max-height:545px;
-  transform-style:preserve-3d; transition:transform .62s cubic-bezier(.22,.9,.16,1); cursor:pointer;
+  transform-style:preserve-3d; cursor:pointer;
 }
 .card.flip{transform:rotateY(180deg)}
 .face{
@@ -286,10 +286,11 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 /* 凝胶打在卡片右上角 */
 .face.front::after{
   content:""; position:absolute; inset:0; pointer-events:none;
-  background:var(--cc); opacity:.18;
-  -webkit-mask-image:radial-gradient(74% 48% at 98% -10%, #000 0%, transparent 64%);
-  mask-image:radial-gradient(74% 48% at 98% -10%, #000 0%, transparent 64%);
-  transition:background .5s;
+  background:linear-gradient(148deg, var(--cc), var(--g2, var(--cc)));
+  opacity:.20;
+  -webkit-mask-image:radial-gradient(78% 52% at 98% -10%, #000 0%, transparent 66%);
+  mask-image:radial-gradient(78% 52% at 98% -10%, #000 0%, transparent 66%);
+  transition:opacity .3s;
 }
 /* 顶边的小色签：卡片的类别索引 */
 .ctab{
@@ -306,7 +307,7 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 
 .meta{display:flex; align-items:center; gap:7px; flex-wrap:wrap; position:relative; z-index:1}
 .tag{font-family:var(--label); font-size:9.5px; letter-spacing:.06em; padding:5px 9px; border-radius:999px; background:rgba(255,255,255,.06); color:#C4B2BC}
-.tag.cat{color:var(--ink-on); font-weight:700; background:var(--cc); letter-spacing:.06em; transition:background .5s}
+.tag.cat{color:var(--cc-ink,#2A0F1A); font-weight:700; background:var(--cc); letter-spacing:.06em; transition:background .3s}
 .tag.who{border:1px solid rgba(255,255,255,.12); background:transparent; color:#A996A1}
 .tag.prop{color:#C4B2BC}
 .tag.prop.main{
@@ -500,14 +501,13 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 #glow{
   position:fixed; left:50%; top:44%; width:150vmax; height:150vmax; z-index:0;
   transform:translate(-50%,-50%); pointer-events:none;
-  background:var(--cc); opacity:.26;
+  background:var(--gc,#FF9E7A); opacity:var(--go,.26);
   -webkit-mask-image:radial-gradient(closest-side,rgba(0,0,0,.95) 0%,rgba(0,0,0,.9) 30%,rgba(0,0,0,.62) 48%,rgba(0,0,0,.2) 66%,transparent 84%);
   mask-image:radial-gradient(closest-side,rgba(0,0,0,.95) 0%,rgba(0,0,0,.9) 30%,rgba(0,0,0,.62) 48%,rgba(0,0,0,.2) 66%,transparent 84%);
-  transition:background .55s ease, opacity .5s ease;
 }
 /* 越深越亮：档位只改浓度，不改色相 */
-body[data-tier="2"] #glow{opacity:.30}
-body[data-tier="3"] #glow{opacity:.34}
+body[data-tier="2"]{--go:.30}
+body[data-tier="3"]{--go:.34}
 
 @keyframes auraA{
   0%{transform:translate3d(0,0,0) scale(1)}
@@ -532,7 +532,7 @@ body[data-tier="3"] #glow{opacity:.34}
 }
 /* 暗到「最暗」时，光收一点，别抢正文 */
 body.bright-3 #aura{opacity:.26}
-body.bright-3 #glow{opacity:.14}
+body.bright-3{--go:.12}
 </style>
 </head>
 <body>
@@ -729,6 +729,9 @@ body.bright-3 #glow{opacity:.14}
 <div id="toast"></div>
 
 <script>
+/*__VENDOR__*/
+</script>
+<script>
 /*__DATA__*/
 </script>
 <script>
@@ -789,6 +792,101 @@ function toast(msg, actText, actFn) {
   toastT = setTimeout(hideToast, actText ? 4000 : 1900);
 }
 function hideToast() { clearTimeout(toastT); $("toast").classList.remove("on"); }
+
+/* ============================================================
+   颜色与动效
+   ------------------------------------------------------------
+   chroma.js 负责颜色：房间换色不走 sRGB 直插（中间会经过一段发灰的
+   土黄），而是沿 LCH 色相扫过去；每张卡的第二凝胶色也按类别色算。
+   anime.js 负责编排：翻牌是四条动画同时发生，不是一条。
+   ============================================================ */
+var RM = false;
+try { RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
+var glowNow = "#FF9E7A";   /* 这一帧房间里实际的光色，被打断时从这里接着扫 */
+var lightProxy = { t: 1 };
+var GELS = {};
+
+function gelOf(key, color) {
+  if (GELS[key]) return GELS[key];
+  var c = chroma(color);
+  var g = {
+    cc: c.hex(),
+    /* 亮底配深字、暗底配浅字，由亮度算，换色不用手改 */
+    ink: c.luminance() > 0.42 ? "#2A0F1A" : "#FFF6EF",
+    /* 第二凝胶色：色相 +28°，6 个类别因此不是 6 个平涂色块 */
+    g2: c.set("hsl.h", (c.get("hsl.h") + 28) % 360).hex()
+  };
+  GELS[key] = g;
+  return g;
+}
+
+/* 房间的光从当前色扫到目标色。走 LCH，是色相在转，不是明度在掉。 */
+function sweepLight(to) {
+  var from = glowNow;
+  anime.remove(lightProxy);
+  if (RM || from === to) { glowNow = to; $("glow").style.backgroundColor = to; return; }
+  lightProxy.t = 0;
+  var lastWrite = 0;
+  anime({
+    targets: lightProxy, t: 1, duration: 620, easing: "easeOutCubic",
+    update: function () {
+      glowNow = chroma.mix(from, to, lightProxy.t, "lch").hex();
+      /* 换整屏一层的底色是重绘。颜色是低频信息，隔帧写一次看不出台阶，
+         重绘量却减半——中端机在这里最容易掉帧。 */
+      var now = performance.now();
+      if (now - lastWrite < 28) return;
+      lastWrite = now;
+      $("glow").style.backgroundColor = glowNow;
+    },
+    complete: function () { $("glow").style.backgroundColor = glowNow; }
+  });
+}
+
+/* 完成一张时，光冲一下再落回档位浓度 */
+function bloom() {
+  if (RM) return;
+  var base = parseFloat(getComputedStyle(document.body).getPropertyValue("--go")) || 0.26;
+  var p = { v: base + 0.16 };
+  anime.remove(p);
+  anime({
+    targets: p, v: base, duration: 640, easing: "easeOutQuad",
+    update: function () { document.body.style.setProperty("--go", p.v.toFixed(3)); },
+    /* 交还给 CSS，否则行内值会把档位与亮度的规则压死 */
+    complete: function () { document.body.style.removeProperty("--go"); }
+  });
+}
+
+/* 翻到正面后，内容分层浮起：标签 → 标题 → 正文 → 底部 */
+function dealIn() {
+  if (RM) return;
+  var plan = [
+    ["#cardFront .meta", 250, 6],
+    ["#cardFront .ctitle", 310, 10],
+    ["#cardFront .ctext", 360, 14],
+    ["#cardFront .cfoot", 430, 0]
+  ];
+  plan.forEach(function (it) {
+    var el = document.querySelector(it[0]);
+    if (el) el.style.opacity = "0";   /* 先压住，别在延迟里闪一下 */
+  });
+  plan.forEach(function (it) {
+    anime({
+      targets: it[0], opacity: [0, 1], translateY: [it[2], 0],
+      duration: 440, delay: it[1], easing: "easeOutQuad"
+    });
+  });
+}
+
+function countTo(el, n) {
+  if (RM || !n) { el.textContent = n; return; }
+  var p = { v: 0 };
+  anime.remove(p);
+  anime({
+    targets: p, v: n, duration: 780, easing: "easeOutExpo", round: 1,
+    update: function () { el.textContent = p.v; }
+  });
+}
 
 /* ---------- 边界过滤 ---------- */
 var RE = {
@@ -1037,10 +1135,18 @@ function renderCard() {
   var c = G.card, cat = CATS[c.cat];
   var card = $("card");
   card.classList.remove("flip");
+  /* 翻牌由 anime.js 驱动，行内 transform 必须清掉，
+     否则移除 .flip 之后卡会停在正面 */
+  anime.remove("#card");
+  card.style.transform = "";
   resetSwipe();
-  /* 房间跟着卡换颜色：--cc 挂到 body 上，卡片、背后的光、
-     顶部进度线都从这一个变量取色。 */
-  document.body.style.setProperty("--cc", cat.color);
+  /* 房间跟着卡换颜色：--cc 立刻切（卡上已经换好了），
+     背后的光用 LCH 扫过去（光正在变）——两者不同步是故意的。 */
+  var gel = gelOf(c.cat, cat.color);
+  document.body.style.setProperty("--cc", gel.cc);
+  document.body.style.setProperty("--cc-ink", gel.ink);
+  document.body.style.setProperty("--g2", gel.g2);
+  sweepLight(gel.cc);
   $("cMark").textContent = MARK[c.cat] || "";
   $("cCat").textContent = cat.name;
   $("cWho").textContent = whoText(c.who);
@@ -1261,8 +1367,19 @@ function flipCard() {
   if (!G || !G.card || G.flip) return;
   G.flip = true;
   $("card").classList.add("flip");
+  anime.remove("#card");
+  if (RM) {
+    $("card").style.transform = "";
+  } else {
+    anime({
+      targets: "#card", rotateY: 180, duration: 660, easing: "easeOutQuint",
+      /* 动画结束把卡交还给 .flip 类，行内 transform 不能留 */
+      complete: function () { $("card").style.transform = ""; }
+    });
+  }
   updateButtons();
   buzz(8);
+  dealIn();
   if (G.card.dur) setTimeout(runTimer, 420);
 }
 
@@ -1278,6 +1395,7 @@ function doComplete() {
   G.done++; G.tierDone++;
   G.log.push({ id: c.id, cat: c.cat, tier: G.tier });
   buzz(12);
+  bloom();
   if (G.target && G.done >= G.target) { endGame(); return; }
   if (G.tierDone >= 10) {
     if (G.tier < P.maxTier) { G.tier++; G.tierDone = 0; showAct(); return; }
@@ -1407,8 +1525,8 @@ function endGame(exhausted) {
   stopTimer();
   hideToast();
   clearS();
-  $("stDone").textContent = G ? G.done : 0;
-  $("stSkip").textContent = G ? (3 - G.skip) : 0;
+  countTo($("stDone"), G ? G.done : 0);
+  countTo($("stSkip"), G ? (3 - G.skip) : 0);
   $("stTier").textContent = G ? TIERS[G.tier].name : "—";
   var list = $("favList"); list.innerHTML = "";
   var lg = (G && G.log) ? G.log.slice().reverse() : [];

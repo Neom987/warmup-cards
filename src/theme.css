@@ -217,7 +217,7 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 
 .card{
   position:relative; width:100%; max-width:420px; height:100%; max-height:545px;
-  transform-style:preserve-3d; transition:transform .62s cubic-bezier(.22,.9,.16,1); cursor:pointer;
+  transform-style:preserve-3d; cursor:pointer;
 }
 .card.flip{transform:rotateY(180deg)}
 .face{
@@ -269,10 +269,11 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 /* 凝胶打在卡片右上角 */
 .face.front::after{
   content:""; position:absolute; inset:0; pointer-events:none;
-  background:var(--cc); opacity:.18;
-  -webkit-mask-image:radial-gradient(74% 48% at 98% -10%, #000 0%, transparent 64%);
-  mask-image:radial-gradient(74% 48% at 98% -10%, #000 0%, transparent 64%);
-  transition:background .5s;
+  background:linear-gradient(148deg, var(--cc), var(--g2, var(--cc)));
+  opacity:.20;
+  -webkit-mask-image:radial-gradient(78% 52% at 98% -10%, #000 0%, transparent 66%);
+  mask-image:radial-gradient(78% 52% at 98% -10%, #000 0%, transparent 66%);
+  transition:opacity .3s;
 }
 /* 顶边的小色签：卡片的类别索引 */
 .ctab{
@@ -289,7 +290,7 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 
 .meta{display:flex; align-items:center; gap:7px; flex-wrap:wrap; position:relative; z-index:1}
 .tag{font-family:var(--label); font-size:9.5px; letter-spacing:.06em; padding:5px 9px; border-radius:999px; background:rgba(255,255,255,.06); color:#C4B2BC}
-.tag.cat{color:var(--ink-on); font-weight:700; background:var(--cc); letter-spacing:.06em; transition:background .5s}
+.tag.cat{color:var(--cc-ink,#2A0F1A); font-weight:700; background:var(--cc); letter-spacing:.06em; transition:background .3s}
 .tag.who{border:1px solid rgba(255,255,255,.12); background:transparent; color:#A996A1}
 .tag.prop{color:#C4B2BC}
 .tag.prop.main{
@@ -483,14 +484,13 @@ body.fs-l .ctext{font-size:clamp(20px,5.8vw,23px)}
 #glow{
   position:fixed; left:50%; top:44%; width:150vmax; height:150vmax; z-index:0;
   transform:translate(-50%,-50%); pointer-events:none;
-  background:var(--cc); opacity:.26;
+  background:var(--gc,#FF9E7A); opacity:var(--go,.26);
   -webkit-mask-image:radial-gradient(closest-side,rgba(0,0,0,.95) 0%,rgba(0,0,0,.9) 30%,rgba(0,0,0,.62) 48%,rgba(0,0,0,.2) 66%,transparent 84%);
   mask-image:radial-gradient(closest-side,rgba(0,0,0,.95) 0%,rgba(0,0,0,.9) 30%,rgba(0,0,0,.62) 48%,rgba(0,0,0,.2) 66%,transparent 84%);
-  transition:background .55s ease, opacity .5s ease;
 }
 /* 越深越亮：档位只改浓度，不改色相 */
-body[data-tier="2"] #glow{opacity:.30}
-body[data-tier="3"] #glow{opacity:.34}
+body[data-tier="2"]{--go:.30}
+body[data-tier="3"]{--go:.34}
 
 @keyframes auraA{
   0%{transform:translate3d(0,0,0) scale(1)}
@@ -515,4 +515,4 @@ body[data-tier="3"] #glow{opacity:.34}
 }
 /* 暗到「最暗」时，光收一点，别抢正文 */
 body.bright-3 #aura{opacity:.26}
-body.bright-3 #glow{opacity:.14}
+body.bright-3{--go:.12}

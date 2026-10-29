@@ -65,13 +65,21 @@ python tools/export_all_cards.py  # 导出全部卡片为一份 Markdown，交�
 index.html          构建产物，双击即玩，同时是 Pages 入口
 build.py            JSON → 单文件
 check_cards.py      卡片校验
-src/app.html        应用模板（/*__DATA__*/ 是数据占位）
+src/app.html        应用模板（/*__DATA__*/ 数据占位、/*__VENDOR__*/ 库占位）
 src/theme.css       界面主题
+src/vendor/         chroma.min.js（颜色）+ anime.min.js（动效），构建时内联
 src/font.css        字体子集（base64 woff2，由 tools/make_font.py 生成）
 src/cards/          tier1..3.json 三档卡片 / props.json 道具
 data/               500 张卡片的原始 Markdown 稿（import_500.py 的输入）
 tools/              构建链、内容审计、回归脚本
 ```
+
+**第三方库**
+
+只有两个，都在 `src/vendor/`，`build.py` 会把它们内联进 `index.html`，所以产物仍然是**零网络请求**的单文件。
+
+- **chroma.js** 2.4.2（BSD-3）——房间换色走 LCH 而不是 sRGB，否则玫瑰到薄荷的中途会经过一段灰；每张卡的第二凝胶色、类别标签的字色也由它算。
+- **anime.js** 3.2.2（MIT）——翻牌的编排：卡转、内容分层浮起、光晕冲击、结束页数字滚动。
 
 **字体**
 
