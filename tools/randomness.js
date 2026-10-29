@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer-core");
 const path = require("path");
+const { advance } = require("./_adv");
 
 const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -58,7 +59,7 @@ const GKEY = "csc.v3.game";
       if (s.ov) { await page.evaluate(() => document.getElementById("actOk").click()); await sleep(300); continue; }
       if (!s.flip) { await page.click("#card"); await sleep(400); }
       seq.push(s.cat + ":" + s.title);
-      await page.evaluate(() => document.getElementById("doneBtn").click());
+      await advance(page);
       await sleep(280);
     }
     runs.push(seq);

@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer-core");
 const path = require("path");
+const { advance } = require("./_adv");
 const fs = require("fs");
 
 const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
@@ -92,7 +93,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     if (s.prop && !fs.existsSync(path.join(SHOTS, "p02-prop-card.png"))) {
       await shot("p02-prop-card.png");
     }
-    await page.evaluate(() => document.getElementById("doneBtn").click());
+    await advance(page);
     await sleep(260);
   }
   await sleep(400);

@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer-core");
 const path = require("path");
+const { advance } = require("./_adv");
 const fs = require("fs");
 
 const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
@@ -67,7 +68,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     if (s.ov) { await page.click("#actOk"); await sleep(400); continue; }
     subs.push({ i, sub: s.sub, toast: s.toast });
     if (!s.flip) { await page.click("#card"); await sleep(320); }
-    await page.click("#doneBtn");
+    await advance(page);
     await sleep(300);
   }
   await shot("m01-maxtier.png");

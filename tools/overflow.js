@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer-core");
 const path = require("path");
+const { advance } = require("./_adv");
 const fs = require("fs");
 
 const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
@@ -76,7 +77,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         await page.screenshot({ path: path.join(SHOTS, "t01-overflow.png") });
       }
     }
-    await page.click("#doneBtn");
+    await advance(page);
     await sleep(260);
   }
   console.log(JSON.stringify({ seen, over, worst, errs }, null, 2));

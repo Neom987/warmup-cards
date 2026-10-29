@@ -56,16 +56,22 @@ async function run(browser, w, h, tag) {
 
   const game = await page.evaluate(() => {
     const c = document.getElementById("card").getBoundingClientRect();
-    const d = document.getElementById("doneBtn").getBoundingClientRect();
+    /* 翻牌之后屏幕上的主操作是「各自选」那一行，#doneBtn 要到揭晓才出现，
+       所以量 .acts 整体的下沿，才是「操作区有没有出屏」的答案。 */
+    const a = document.querySelector(".acts").getBoundingClientRect();
+    const chEl = document.getElementById("choose");
+    const ch = chEl.getBoundingClientRect();
     const s = document.querySelector(".screen.on");
     const txt = document.getElementById("cText");
     return {
       screen: s.id,
       card: { top: Math.round(c.top), bottom: Math.round(c.bottom), h: Math.round(c.height) },
-      done: { top: Math.round(d.top), bottom: Math.round(d.bottom) },
+      act: { top: Math.round(a.top), bottom: Math.round(a.bottom) },
+      choose: { w: Math.round(ch.width), h: Math.round(ch.height) },
       vh: window.innerHeight,
       cardVisible: c.top >= 0 && c.bottom <= window.innerHeight,
-      doneVisible: d.bottom <= window.innerHeight,
+      actVisible: a.height > 0 && a.bottom <= window.innerHeight,
+      chooseFits: ch.width > 0 && chEl.scrollWidth <= chEl.clientWidth + 1,
       textOverflow: txt.scrollHeight > txt.clientHeight + 2,
       scrollH: s.scrollHeight,
     };
