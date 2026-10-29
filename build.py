@@ -20,12 +20,12 @@ TIER_META = {
     3: {"name": "深处", "act": "第三幕 · 深处", "desc": "进入、节奏、掌控"},
 }
 CAT_META = {
-    "say": {"name": "语言撩拨", "color": "#c9738a"},
-    "gaze": {"name": "距离眼神", "color": "#7f8fc9"},
-    "touch": {"name": "触碰引导", "color": "#cf8f5c"},
-    "scene": {"name": "场景氛围", "color": "#6fa98d"},
-    "truth": {"name": "真心话", "color": "#c9b45c"},
-    "command": {"name": "指令掌控", "color": "#c05a44"},
+    "say": {"name": "语言撩拨", "color": "#FF7E9D"},
+    "gaze": {"name": "距离眼神", "color": "#8FB8FF"},
+    "touch": {"name": "触碰引导", "color": "#FFA25C"},
+    "scene": {"name": "场景氛围", "color": "#7FE0B0"},
+    "truth": {"name": "真心话", "color": "#FFD37A"},
+    "command": {"name": "指令掌控", "color": "#C08CFF"},
 }
 BOUNDS = [
     {"key": "body", "name": "触碰：胸口、大腿"},
