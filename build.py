@@ -3,6 +3,9 @@
 
 用法： python build.py
 输出： index.html（双击即玩，同时是 GitHub Pages 的入口）
+
+源与产物：src/ 是唯一的源，index.html 只由本脚本生成。
+不要手改 index.html——下一次构建会把它覆盖掉。
 """
 import json
 import os
@@ -13,46 +16,22 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 CARDS = os.path.join(ROOT, "src", "cards")
 TEMPLATE = os.path.join(ROOT, "src", "app.html")
 OUT = os.path.join(ROOT, "index.html")
-VENDOR = os.path.join(ROOT, "src", "vendor")
-VENDOR_FILES = ("chroma.min.js", "anime.min.js")
 
 TIER_META = {
     1: {"name": "调情", "act": "第一幕 · 调情", "desc": "接吻、抚摸、开始脱"},
     2: {"name": "升温", "act": "第二幕 · 升温", "desc": "口、手、边缘"},
     3: {"name": "深处", "act": "第三幕 · 深处", "desc": "进入、节奏、掌控"},
 }
+# 低饱和的哑光色，配红金暗场。改这里会同时改卡片左侧的色线、类别标签、
+# 三选一的顶边色，以及掷骰时骰面的字色。
 CAT_META = {
-    "say": {"name": "语言撩拨", "color": "#FF7E9D"},
-    "gaze": {"name": "距离眼神", "color": "#8FB8FF"},
-    "touch": {"name": "触碰引导", "color": "#FFA25C"},
-    "scene": {"name": "场景氛围", "color": "#7FE0B0"},
-    "truth": {"name": "真心话", "color": "#FFD37A"},
-    "command": {"name": "指令掌控", "color": "#C08CFF"},
-    # 规则卡不是牌库里的卡，用近白的中性色，房间的光会跟着变淡——
-    # 让「这一张不是牌，是规则」在视觉上立刻成立
-    "rule": {"name": "规则", "color": "#E9DCE6"},
+    "say": {"name": "语言撩拨", "color": "#c9738a"},
+    "gaze": {"name": "距离眼神", "color": "#7f8fc9"},
+    "touch": {"name": "触碰引导", "color": "#cf8f5c"},
+    "scene": {"name": "场景氛围", "color": "#6fa98d"},
+    "truth": {"name": "真心话", "color": "#c9b45c"},
+    "command": {"name": "指令掌控", "color": "#c05a44"},
 }
-
-# 规则卡：每 7 张普通卡插一张，改的是这一局的规则而不是内容。
-# 五种全部是「降级或增权」，没有一种是加码——这类游戏真正缺的是
-# 控制感和呼吸，不是强度。
-RULES = [
-    {"id": "breath", "effect": "breath", "title": "停一下", "dur": 60, "who": "both",
-     "text": "抱住，什么都不做。六十秒。谁都不用说话。",
-     "alt": "不想抱就牵着手，一样六十秒。"},
-    {"id": "silent", "effect": "silence", "title": "不说话", "who": "both",
-     "text": "接下来两张，只用动作和眼神。说「停」不算破例。",
-     "alt": "想说话就说，没人会记着。"},
-    {"id": "tell", "effect": "tell", "title": "说一件", "who": "both",
-     "text": "各说一件今天没来得及说的小事。对方只听着，不接话。",
-     "alt": "想不出来，就说今天最想吃什么。"},
-    {"id": "pick", "effect": "pick", "title": "挑一张", "who": "both",
-     "text": "下一张，从三张里挑。另外两张放回牌堆，跳过次数不变。",
-     "alt": "不想挑就直接抽，一样算。"},
-    {"id": "eyes", "effect": "eyes", "title": "闭上眼", "who": "both",
-     "text": "下一张，闭着眼做。做完再睁开。",
-     "alt": "不想闭眼，就让对方的手盖住你的眼睛。"},
-]
 BOUNDS = [
     {"key": "body", "name": "触碰：胸口、大腿"},
     {"key": "kiss", "name": "亲吻：嘴唇、身体"},
@@ -100,13 +79,13 @@ def main():
             "title": c["title"],
             "text": c["text"],
             "who": c.get("who", "drawer"),
-            "props": c["props"],
-            "extra": 1,
         }
         if c.get("dur"):
             item["dur"] = c["dur"]
         if c.get("alt"):
             item["alt"] = c["alt"]
+        item["props"] = c["props"]
+        item["extra"] = 1
         cards.append(item)
 
     data = {
@@ -114,7 +93,6 @@ def main():
         "cats": CAT_META,
         "props": props_doc["props"],
         "bounds": BOUNDS,
-        "rules": RULES,
         "cards": cards,
     }
 
@@ -127,25 +105,13 @@ def main():
         return 1
     html = html.replace("/*__DATA__*/", payload)
 
-    # 第三方库直接内联，保持「双击即玩、零网络请求」
-    if "/*__VENDOR__*/" not in html:
-        print("✗ 模板里找不到 /*__VENDOR__*/ 占位")
-        return 1
-    parts = []
-    for name in VENDOR_FILES:
-        path = os.path.join(VENDOR, name)
-        if not os.path.exists(path):
-            print(f"✗ 缺少 {os.path.join('src', 'vendor', name)}")
-            return 1
-        with open(path, encoding="utf-8") as f:
-            parts.append(f.read().strip())
-    html = html.replace("/*__VENDOR__*/", "\n".join(parts))
     # 去掉行尾空白，避免 git diff --check 把生成文件判成脏改动。
     html = "\n".join(line.rstrip() for line in html.splitlines()) + "\n"
 
-    # 保险：确认没有残留外链资源
+    # 保险：单文件不能有任何外链资源，否则离线双击就废了
     if re.search(r'<(script|link)[^>]+(src|href)="https?://', html):
         print("✗ 存在外部资源引用，单文件会失效")
+        return 1
 
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write(html)

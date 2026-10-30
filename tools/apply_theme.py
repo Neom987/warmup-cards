@@ -31,7 +31,9 @@ def main():
     if n != 1:
         print(f"!! 匹配到 {n} 个 <style>，预期 1 个")
         return 1
-    with open(APP, "w", encoding="utf-8") as f:
+    # 必须显式 newline="\n"：Windows 下文本模式会把整个模板写成 CRLF，
+    # 之后每次构建都会变成全文件 diff。
+    with open(APP, "w", encoding="utf-8", newline="\n") as f:
         f.write(new)
     print(f"已内联 theme.css（{len(css)} 字节）到 app.html")
     return 0

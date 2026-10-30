@@ -9,6 +9,9 @@ shots/
 # 打包产物
 dist/
 
+# 依赖（回归脚本用，npm i 即可恢复）
+node_modules/
+
 # 系统与编辑器
 .DS_Store
 Thumbs.db

@@ -20,7 +20,7 @@ CAT_NAMES = {
     "truth": "真心话", "command": "指令掌控",
 }
 WHO = {"drawer", "partner", "both", "random"}
-EXPECTED = {1: 120, 2: 156, 3: 224}
+EXPECTED = {1: 145, 2: 179, 3: 234}
 MIN_PER_CAT = 4
 SIM_THRESHOLD = 0.86
 TEXT_MIN, TEXT_MAX = 8, 90
