@@ -181,6 +181,30 @@ async function startGame(h, modeIdx, tierIdx) {
   await sleep(60);
   ok("收藏按钮变成实心", h.txt("#favBtn") !== fav0, fav0 + " → " + h.txt("#favBtn"));
 
+  /* ---------- 视觉：房间跟着卡换色（v5 的签名） ---------- */
+  console.log("\n[视觉：房间跟着卡换色]");
+  h = await boot();
+  ok("环境光与卡片背后的凝胶光都在", !!h.$("#aura") && !!h.$("#glow"));
+  ok("牌背转盘 / 牌面色签 / 档位药丸都在", !!h.$(".disc") && !!h.$(".ctab") && !!h.$(".tierpill"));
+  await startGame(h, 0);
+  const body = h.window.document.body;
+  const c1 = body.style.getPropertyValue("--cc");
+  ok("类别色写进 --cc", /^#[0-9a-f]{6}$/i.test(c1), c1);
+  ok("第二凝胶色与主色不同", body.style.getPropertyValue("--g2") !== c1, body.style.getPropertyValue("--g2"));
+  ok("字色按对比度选（深/浅二选一）", /^#(2a0f1a|fff6ef)$/i.test(body.style.getPropertyValue("--cc-ink")), body.style.getPropertyValue("--cc-ink"));
+  ok("凝胶光已着色", h.$("#glow").style.backgroundColor !== "", h.$("#glow").style.backgroundColor);
+  ok("档位写进 data-tier", body.dataset.tier === "1", body.dataset.tier);
+  const shades = new Set([c1]);
+  for (let i = 0; i < 6; i++) {
+    h.tap(h.$("#card"));
+    await sleep(50);
+    h.$("#doneBtn").click();
+    await sleep(130);
+    shades.add(body.style.getPropertyValue("--cc"));
+  }
+  ok("换卡时房间真的换色", shades.size > 1, [...shades].join(" "));
+  h.close();
+
   /* ---------- 结束页 ---------- */
   console.log("\n[结束页]");
   if (h.$("#quitBtn")) h.$("#quitBtn").click();

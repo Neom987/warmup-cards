@@ -94,7 +94,7 @@ index.html          构建产物，双击即玩，同时是 Pages 入口
 build.py            JSON → 单文件
 check_cards.py      卡片校验
 src/app.html        应用模板（/*__DATA__*/ 数据占位）
-src/theme.css       界面主题（v6 红金夜场）
+src/theme.css       界面主题（v5 凝胶灯：换一张卡，房间换一个颜色）
 src/font.css        字体子集（base64 woff2，由 tools/make_font.py 生成）
 src/cards/          tier1..3.json 三档卡片 / props.json 道具与道具引用
 data/               500 张卡片的原始 Markdown 稿（import_500.py 的输入）
@@ -108,8 +108,10 @@ tools/              构建链、内容审计、回归脚本
 
 **第三方库**
 
-没有。v6 起去掉了内联的 chroma.js 与 anime.js（房间不再跟着卡换色，翻牌交给 CSS transition），
-产物仍然是**零网络请求**的单文件，体积从 677 KB 降到 611 KB。
+没有。v5 时代内联过 chroma.js（LCH 换色）与 anime.js（翻牌编排），现在这两件事都由
+`src/app.html` 里几十行原生 JS 和 CSS 完成：类别色 → 亮度判字色 + 色相 +28° 得第二色，
+换色靠 `background-color` 过渡，翻牌靠 `transform`，内容分层浮起靠 keyframes 的 delay。
+产物仍是**零网络请求**的单文件（620 KB）。
 
 **回归**
 
