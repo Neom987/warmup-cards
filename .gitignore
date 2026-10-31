@@ -12,6 +12,9 @@ dist/
 # 依赖（回归脚本用，npm i 即可恢复）
 node_modules/
 
+# side 的本地脚手架（截图驱动 / 回归脚本，依赖本机 Edge 路径）
+side/tools/
+
 # 系统与编辑器
 .DS_Store
 Thumbs.db
