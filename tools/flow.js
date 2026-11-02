@@ -1,220 +1,176 @@
-/* 回归：主流程（jsdom，不需要浏览器）
- *
- *   node tools/flow.js
- *
- * 为什么用 jsdom 而不是 puppeteer：这套断言只关心「点了以后状态对不对」，
- * 不关心像素，跑在 jsdom 里意味着没有 Edge 的机器上也能跑。
- * 布局相关的回归（溢出、小屏、字号）仍在 tools/overflow.js / fit.js 里，
- * 那些必须真浏览器 + Edge。
- *
- * 覆盖：设置页 → 六种玩法各自能开局 → 翻牌 → 做完 / 跳过 / 升降档 / 撤销
- *       → 收藏 → 暂停继续 → 结束页 → 全程无未捕获异常。
- */
+/* jsdom 流程回归：待机 → 校准 → 抽牌 → 作答 → 跳过 → 报告 → 暗夜 → 牌库记忆 → 一直抽 */
+const { JSDOM, VirtualConsole } = require("jsdom");
 const fs = require("fs");
+const http = require("http");
 const path = require("path");
-const { JSDOM } = require("jsdom");
 
-const HTML = fs.readFileSync(path.resolve(__dirname, "..", "index.html"), "utf8");
+const ROOT = path.resolve(__dirname, "..");
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let fails = 0;
 function ok(name, cond, extra) {
-  if (cond) console.log("  ✓ " + name);
-  else { fails++; console.log("  ✗ " + name + (extra !== undefined ? "  → " + extra : "")); }
+  console.log((cond ? "  ok  " : "  FAIL") + "  " + name + (cond || !extra ? "" : "  → " + extra));
+  if (!cond) fails++;
 }
 
-async function boot() {
-  const dom = new JSDOM(HTML, {
-    url: "http://localhost/", runScripts: "dangerously", pretendToBeVisual: true,
+/* file:// 在 jsdom 里是 opaque origin，localStorage 会抛错；起个临时 http 服务来跑 */
+const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json" };
+function serve() {
+  return new Promise((resolve) => {
+    const srv = http.createServer((req, res) => {
+      const rel = decodeURIComponent(req.url.split("?")[0]);
+      const file = path.join(ROOT, rel);
+      if (!file.startsWith(ROOT) || !fs.existsSync(file)) { res.writeHead(404); res.end(); return; }
+      res.writeHead(200, { "Content-Type": MIME[path.extname(file)] || "application/octet-stream" });
+      res.end(fs.readFileSync(file));
+    });
+    srv.listen(0, "127.0.0.1", () => resolve(srv));
   });
-  const { window } = dom;
-  window.navigator.vibrate = () => true;
-  const errs = [];
-  window.addEventListener("error", (e) => errs.push(e.message));
-  await sleep(120);
-
-  const $ = (s) => window.document.querySelector(s);
-  const $$ = (s) => [...window.document.querySelectorAll(s)];
-  /* 翻牌走的是 pointerdown/pointerup，不是 click */
-  const tap = (el) => {
-    if (!el) throw new Error("tap: 元素不存在");
-    for (const t of ["pointerdown", "pointerup"]) {
-      el.dispatchEvent(new window.MouseEvent(t, { bubbles: true, clientX: 100, clientY: 400 }));
-    }
-  };
-  const on = (s) => { const e = $(s); return !!e && e.classList.contains("on"); };
-  const txt = (s) => ($(s) ? $(s).textContent.trim() : "");
-  return { window, $, $$, tap, on, txt, errs, close: () => dom.window.close() };
-}
-
-async function startGame(h, modeIdx, tierIdx) {
-  h.$("#agreeRow").click();
-  await sleep(20);
-  h.$$("#modeChips .chip")[modeIdx].click();
-  await sleep(20);
-  if (tierIdx !== undefined) { h.$$("#segTier button")[tierIdx].click(); await sleep(20); }
-  h.$("#startBtn").click();
-  await sleep(120);
 }
 
 (async () => {
-  /* ---------- 设置页 ---------- */
-  console.log("\n[设置页]");
-  let h = await boot();
-  const modes = h.$$("#modeChips .chip").map((e) => e.textContent.trim());
-  ok("六个玩法", modes.length === 6, modes.join(" / "));
-  ok("温度三档", h.$$("#segTier button").length === 3);
-  ok("抽卡数四个选项", h.$$("#segCount button").length === 4);
-  ok("可用卡数 615", h.txt("#poolInfo").includes("615"), h.txt("#poolInfo"));
-  ok("温度上限右侧有数字", /3 \/ 3 档/.test(h.txt("#tierCount")), h.txt("#tierCount"));
-  ok("未勾协议时按钮是提示文案", h.txt("#startBtn").includes("先勾选"));
-  h.close();
+  const errors = [];
+  const vc = new VirtualConsole();
+  vc.on("jsdomError", (e) => {
+    if (/Not implemented: HTMLCanvasElement/.test(e.message)) return;
+    errors.push("jsdomError: " + e.message);
+  });
+  vc.on("error", (...a) => errors.push("console.error: " + a.join(" ")));
 
-  /* ---------- 经典 ---------- */
-  console.log("\n[经典：翻牌 / 做完 / 撤销]");
-  h = await boot();
-  await startGame(h, 0);
-  ok("进入抽卡页", h.on("#s-game"));
-  const t0 = h.txt("#actSub");
-  ok("未翻牌时「做完」是禁用的", h.$("#doneBtn").disabled);
-  h.tap(h.$("#card"));
-  await sleep(80);
-  ok("翻牌后「做完」可用", !h.$("#doneBtn").disabled);
-  h.$("#doneBtn").click();
-  await sleep(200);
-  ok("做完后进度前进", h.txt("#actSub") !== t0, t0 + " → " + h.txt("#actSub"));
-  ok("出现撤销按钮", !h.$("#undoBtn").hidden);
-  h.$("#undoBtn").click();
+  const srv = await serve();
+  const origin = "http://127.0.0.1:" + srv.address().port;
+
+  const dom = await JSDOM.fromURL(origin + "/index.html", {
+    runScripts: "dangerously",
+    resources: "usable",
+    pretendToBeVisual: true,
+    virtualConsole: vc,
+  });
+
+  const { window } = dom;
+  const doc = window.document;
+  const $ = (s) => doc.querySelector(s);
+  const click = (el) => el.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+  const seen = () => JSON.parse(window.localStorage.getItem("hb_seen") || "[]");
+
+  await new Promise((r) => (doc.readyState === "complete" ? r() : window.addEventListener("load", r)));
+  await sleep(400);
+
+  ok("牌库载入 92 张", window.CARDS && window.CARDS.length === 92, window.CARDS && window.CARDS.length);
+  ok("chroma 可用", typeof window.chroma === "function");
+  ok("anime 可用", typeof window.anime === "function");
+  ok("待机页可见", $("#startLayer").hidden === false);
+  ok("牌库初始满仓", $("#poolInfo").textContent.trim() === "92 / 92 张未抽", $("#poolInfo").textContent);
+  ok("牌库满时隐藏重置", $("#kReset").hidden === true);
+
+  /* --- 暗夜模式 --- */
+  ok("默认日间", doc.documentElement.getAttribute("data-theme") === "day");
+  click($("#kTheme"));
   await sleep(150);
-  ok("撤销回到起点", h.txt("#actSub") === t0, h.txt("#actSub"));
-
-  /* ---------- 跳过 ---------- */
-  console.log("\n[跳过]");
-  h.tap(h.$("#card"));
-  await sleep(80);
-  const s0 = h.txt("#skipBtn");
-  h.$("#skipBtn").click();
-  await sleep(200);
-  ok("跳过次数递减", h.txt("#skipBtn") !== s0, s0 + " → " + h.txt("#skipBtn"));
-  h.close();
-
-  /* ---------- 升降档 ---------- */
-  console.log("\n[升档 / 降档]");
-  h = await boot();
-  await startGame(h, 0, 1);
-  h.tap(h.$("#card"));
-  await sleep(80);
-  h.$("#upBtn").click();
-  await sleep(300);
-  ok("升档后到第二幕", h.txt("#actName").includes("第二幕"), h.txt("#actName"));
-  h.tap(h.$("#card"));
-  await sleep(80);
-  h.$("#downBtn").click();
-  await sleep(200);
-  ok("降档只换卡不改档", h.txt("#actName").includes("第二幕"), h.txt("#actName"));
-  h.close();
-
-  /* ---------- 三选一 ---------- */
-  console.log("\n[三选一]");
-  h = await boot();
-  await startGame(h, 2);
-  await sleep(200);
-  ok("弹出三选一", h.on("#ovPick"));
-  const pk = h.$$("#pickRow .pk");
-  ok("三个选项", pk.length === 3, pk.length + " 个");
-  if (pk.length) pk[0].click();
-  await sleep(200);
-  ok("选完收起", !h.on("#ovPick"));
-  ok("选完有牌面", h.txt("#cCat") !== "");
-  h.close();
-
-  /* ---------- 掷骰 ---------- */
-  console.log("\n[掷骰]");
-  h = await boot();
-  await startGame(h, 3);
+  ok("切到暗夜", doc.documentElement.getAttribute("data-theme") === "night");
+  ok("暗夜时按钮显示「日」", $("#kTheme").textContent === "日", $("#kTheme").textContent);
+  ok("暗夜已记住", window.localStorage.getItem("hb_theme") === "night");
+  click($("#kTheme"));
   await sleep(150);
-  ok("弹出掷骰", h.on("#ovDice"));
-  await sleep(2100);
-  ok("掷骰结束收起", !h.on("#ovDice"));
-  ok("骰面落在类别上", ["语", "眼", "触", "景", "真", "令"].includes(h.txt("#diceFace")), h.txt("#diceFace"));
-  h.close();
+  ok("切回日间", doc.documentElement.getAttribute("data-theme") === "day");
 
-  /* ---------- 限时 ---------- */
-  console.log("\n[限时]");
-  h = await boot();
-  await startGame(h, 4);
+  /* --- 第一局：24 张 --- */
+  const seg = doc.querySelectorAll("#segTotal button");
+  click(seg[1]);
+  ok("张数切到 24", seg[1].classList.contains("on") && !seg[0].classList.contains("on"));
+
+  $("#nameA").value = "阿哲";
+  $("#nameB").value = "小林";
+  click($("#kStart"));
+  await sleep(2400);
+
+  ok("校准后待机页收起", $("#startLayer").hidden === true);
+  ok("第一张已出", !!$(".statement") && $(".statement").textContent.length > 10);
+  ok("进度 01 / 24", $("#prog").textContent.trim() === "01 / 24", $("#prog").textContent);
+  ok("日间没有结束键", $("#kEnd").hidden === true);
+  ok("抽一张即计入牌库", seen().length === 1, seen().length);
+
+  const round1 = [$(".statement").textContent];
+
   await sleep(200);
-  ok("标签变成「限时多久」", h.txt("#countLabel").includes("限时"), h.txt("#countLabel"));
-  ok("显示倒计时", /\d+:\d\d/.test(h.txt("#actSub")), h.txt("#actSub"));
-  h.close();
+  click($("#kAnswer"));
+  await sleep(950);
+  ok("作答后进入第 2 张", $("#prog").textContent.trim() === "02 / 24", $("#prog").textContent);
 
-  /* ---------- 言语局 ---------- */
-  console.log("\n[言语局]");
-  h = await boot();
-  await startGame(h, 5, 2);
-  const seen = [];
-  for (let i = 0; i < 8; i++) {
-    h.tap(h.$("#card"));
-    await sleep(60);
-    seen.push(h.txt("#cCat"));
-    h.$("#doneBtn").click();
-    await sleep(150);
+  click($("#kSkip"));
+  await sleep(200);
+  ok("跳过进入第 3 张", $("#prog").textContent.trim() === "03 / 24", $("#prog").textContent);
+
+  for (let i = 0; i < 40; i++) {
+    if ($("#reportLayer").hidden === false) break;
+    if ($(".statement")) round1.push($(".statement").textContent);
+    click($("#kAnswer"));
+    await sleep(820);
   }
-  const bad = seen.filter((c) => !["语言撩拨", "距离眼神", "真心话"].includes(c));
-  ok("只出语言/眼神/真心话", bad.length === 0, seen.join("/"));
+  await sleep(900);
 
-  /* ---------- 暂停 / 继续 ---------- */
-  console.log("\n[暂停 / 继续]");
-  h.$("#pauseBtn").click();
-  await sleep(200);
-  ok("暂停浮层出现", h.on("#ovPause"));
-  h.$("#resumeBtn2").click();
-  await sleep(200);
-  ok("继续后收起", !h.on("#ovPause"));
+  ok("报告页出现", $("#reportLayer").hidden === false);
+  ok("回答数 = 23", $("#rAns").textContent === "23", $("#rAns").textContent);
+  ok("跳过数 = 1", $("#rSkip").textContent === "1", $("#rSkip").textContent);
+  ok("张力有读数", /^\d\.\d\d$/.test($("#rTension").textContent), $("#rTension").textContent);
+  ok("最长犹豫有读数", /\ds$/.test($("#rPeak").textContent), $("#rPeak").textContent);
+  ok("编号已写入", /^CASE \d{4}$/.test($("#rCase").textContent), $("#rCase").textContent);
+  ok("牌库已记下 24 张", seen().length === 24, seen().length);
 
-  /* ---------- 收藏 ---------- */
-  console.log("\n[收藏]");
-  h.tap(h.$("#card"));
-  await sleep(80);
-  const fav0 = h.txt("#favBtn");
-  h.$("#favBtn").click();
-  await sleep(60);
-  ok("收藏按钮变成实心", h.txt("#favBtn") !== fav0, fav0 + " → " + h.txt("#favBtn"));
+  /* --- 再测一局：不应出现刚抽过的牌 --- */
+  click($("#kAgain"));
+  await sleep(900);
+  ok("再测一局回到牌桌", $("#reportLayer").hidden === true && $("#prog").textContent.trim() === "01 / 24", $("#prog").textContent);
 
-  /* ---------- 视觉：房间跟着卡换色（v5 的签名） ---------- */
-  console.log("\n[视觉：房间跟着卡换色]");
-  h = await boot();
-  ok("环境光与卡片背后的凝胶光都在", !!h.$("#aura") && !!h.$("#glow"));
-  ok("牌背转盘 / 牌面色签 / 档位药丸都在", !!h.$(".disc") && !!h.$(".ctab") && !!h.$(".tierpill"));
-  await startGame(h, 0);
-  const body = h.window.document.body;
-  const c1 = body.style.getPropertyValue("--cc");
-  ok("类别色写进 --cc", /^#[0-9a-f]{6}$/i.test(c1), c1);
-  ok("第二凝胶色与主色不同", body.style.getPropertyValue("--g2") !== c1, body.style.getPropertyValue("--g2"));
-  ok("字色按对比度选（深/浅二选一）", /^#(2a0f1a|fff6ef)$/i.test(body.style.getPropertyValue("--cc-ink")), body.style.getPropertyValue("--cc-ink"));
-  ok("凝胶光已着色", h.$("#glow").style.backgroundColor !== "", h.$("#glow").style.backgroundColor);
-  ok("档位写进 data-tier", body.dataset.tier === "1", body.dataset.tier);
-  const shades = new Set([c1]);
-  for (let i = 0; i < 6; i++) {
-    h.tap(h.$("#card"));
-    await sleep(50);
-    h.$("#doneBtn").click();
-    await sleep(130);
-    shades.add(body.style.getPropertyValue("--cc"));
+  const round2 = [];
+  for (let i = 0; i < 24; i++) {
+    if ($("#reportLayer").hidden === false) break;
+    if ($(".statement")) round2.push($(".statement").textContent);
+    click($("#kAnswer"));
+    await sleep(820);
   }
-  ok("换卡时房间真的换色", shades.size > 1, [...shades].join(" "));
-  h.close();
+  await sleep(900);
 
-  /* ---------- 结束页 ---------- */
-  console.log("\n[结束页]");
-  if (h.$("#quitBtn")) h.$("#quitBtn").click();
-  await sleep(300);
-  ok("退出后离开抽卡页", h.on("#s-end") || h.on("#s-setup"), h.on("#s-end") ? "s-end" : "s-setup");
+  const overlap = round2.filter((t) => round1.indexOf(t) >= 0);
+  ok("第二局没有重复牌", overlap.length === 0, overlap.join(" / "));
+  ok("牌库累计 48 张", seen().length === 48, seen().length);
 
-  console.log("\n[运行时报错]");
-  ok("无未捕获异常", h.errs.length === 0, h.errs.slice(0, 3).join(" | "));
-  h.close();
+  /* --- 一直抽 --- */
+  click($("#kSetup"));
+  await sleep(200);
+  ok("改设置能回待机页", $("#startLayer").hidden === false);
+  ok("牌库读数更新", $("#poolInfo").textContent.trim() === "44 / 92 张未抽", $("#poolInfo").textContent);
+  ok("有抽过就显示重置", $("#kReset").hidden === false);
 
-  console.log(fails === 0 ? "\n✓ 主流程回归通过" : `\n✗ ${fails} 项失败`);
-  process.exit(fails === 0 ? 0 : 1);
-})().catch((e) => { console.error("测试脚本异常:", e); process.exit(1); });
+  const seg2 = doc.querySelectorAll("#segTotal button");
+  click(seg2[3]);
+  ok("选中一直抽", seg2[3].classList.contains("on"));
+  click($("#kStart"));
+  await sleep(2400);
+
+  ok("一直抽显示不限", /^\d\d · 不限$/.test($("#prog").textContent.trim()), $("#prog").textContent);
+  ok("一直抽出现结束键", $("#kEnd").hidden === false);
+
+  for (let i = 0; i < 6; i++) { click($("#kAnswer")); await sleep(820); }
+  ok("一直抽计数在涨", /^07 · 不限$/.test($("#prog").textContent.trim()), $("#prog").textContent);
+
+  click($("#kEnd"));
+  await sleep(900);
+  ok("结束键能收局", $("#reportLayer").hidden === false);
+
+  /* --- 重置牌库 --- */
+  click($("#kSetup"));
+  await sleep(200);
+  click($("#kReset"));
+  await sleep(150);
+  ok("重置后牌库满仓", $("#poolInfo").textContent.trim() === "92 / 92 张未抽", $("#poolInfo").textContent);
+  ok("重置后隐藏重置按钮", $("#kReset").hidden === true);
+
+  ok("无未捕获异常", errors.length === 0, errors.join(" | "));
+
+  console.log(fails ? `\n${fails} 条失败` : "\n全部通过");
+  window.close();
+  srv.close();
+  process.exit(fails ? 1 : 0);
+})();
