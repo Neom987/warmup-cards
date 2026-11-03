@@ -1,102 +1,55 @@
-# 心跳取证 · 双人真心话
+# 两个游戏 · A Game For Two
 
-一个给两个人的真心话抽卡小游戏。界面是一台测谎仪的记录纸：你抽一张牌，念出声，回答。
-**你在一张牌上停得越久，波形抖得越厉害、纸越暖、张力读数越红**——犹豫是唯一被记录的数据。
+一个仓库，两个双人游戏，都在一台手机上玩，都不联网、不上传任何数据。
 
-> 18+ · 请在双方都同意、且随时可以说停的前提下使用。
+**入口是根目录的 `index.html`** —— 一张纸和一盏灯，选一个进去。
 
-设计与迭代记录见 [`PROJECT.md`](PROJECT.md)。
+| | 项目 | 一句话 |
+|---|---|---|
+| 左 · 纸 | [`heart/`](heart/) **心跳取证** | 抽一张真心话念出来回答；你停得越久，波形抖得越厉害，纸也越烫 |
+| 右 · 灯 | [`warmup/`](warmup/) **升温** | 开局定好这一晚的规则，然后一张接一张：翻牌，照做，或者跳过 |
+
+> 18+ · 两个游戏都请在双方都同意、且随时可以说停的前提下使用。
 
 ---
-
-## 怎么玩
-
-1. 打开 `index.html`（同目录下的 `style.css` / `app.js` / `cards.js` / `vendor/` 要一起带上）
-2. 填两个人的称呼，选这一局抽几张（12 / 24 / 全部 / 一直抽）
-3. 「校准并开始」——三行校准日志滚完，记录纸落下
-4. 每张牌只有一个动作：
-
-| 动作 | 做什么 |
-|---|---|
-| 我答了 | 记一次回答，进下一张；回答前停留的时长被算成这张的张力 |
-| 跳过 | 换一张，跳过也记一笔，**不限次数** |
-| 计时 | 牌面带时长时才出现，点一下开始倒计时，到点显示「完成」 |
-| 结束 | 只有「一直抽」模式才有，随时收局 |
-
-5. 抽完进入报告页：回答数 / 跳过数 / 用时 / 平均张力 / 最长犹豫（哪一张）/ 本局编号 / 最犹豫的三张
-
-**键盘**：空格或回车 = 我答了，`S` = 跳过，`T` = 计时。焦点在输入框里时不生效。
-
-## 张力是怎么来的
-
-没有编造强度分级。每张牌只记一件事：**从牌出现到按「我答了」之间过了多久**。
-
-```
-张力 = clamp((停留秒数 − 1.5) / 14, 0, 1)
-```
-
-停 1.5 秒以内算 0，15.5 秒以上封顶 1。这个值同时驱动四处：纸面染色的深浅、
-读数与进度条的颜色、三条笔迹的振幅、按键指示灯的亮度。所以「这张让我卡住了」是看得见的。
-
-## 两种主题
-
-日间是浅色记录纸，暗夜是同一张纸的负片。默认跟随系统的 `prefers-color-scheme`，
-右上角「夜 / 日」可以手动切，选择记在 localStorage 里。
-
-## 牌库
-
-92 张真心话卡，来源是 `data/tier1_truth_extra.json` + `data/tier1_truth_extra2.json`，
-合并成 `cards.js` 里的 `window.CARDS`（不用 fetch，`file://` 双击也能跑）。
-
-| 字段 | 含义 |
-|---|---|
-| `id` | 稳定编号，牌库记忆按它去重 |
-| `title` | 卡面标签 |
-| `text` | 正文，念出声的那一句 |
-| `who` | `drawer` 抽的人答 / `partner` 对方答 / `both` 两人各答一次 / `random` 猜拳决定 |
-| `alt` | 退路：更轻的替代玩法（可选） |
-| `dur` | 建议时长（秒），有值才出现「计时」键 |
-
-分布：`drawer` 62 / `both` 17 / `partner` 11 / `random` 2；带退路 6 张，带时长 22 张。
-
-**牌库记忆**：抽过的卡不会在同一个浏览器里再出现，直到点「重置」清空已抽记录。
-「一直抽」抽完一轮会自动重置并重新洗牌。
 
 ## 目录
 
 ```
-index.html          页面骨架（待机页 / 牌桌 / 报告页三层）
-style.css           记录纸 + 测谎仪机壳的全部样式与两套主题
-app.js              状态机、波形、张力、动效编排
-cards.js            牌库（window.CARDS，由 data/ 下两份 JSON 合并而来）
-data/               牌库源 JSON
-vendor/             chroma.js 2.4.2（LCH 插值）+ anime.js 3.2.2（动效），本地引入
-tools/              回归与截图脚手架
-warmup/             另一个项目：升温（抽卡升温游戏），独立构建，与本项目无关
+index.html          导航页（Pages 入口）：两个游戏二选一
+heart/              心跳取证 · 多文件静态页，无构建
+warmup/             升温 · 单文件应用，由 build.py 从 src/ 生成
 ```
+
+两个项目互不依赖，各自完整：`heart/` 有自己的一套 `tools/` 回归脚本，
+`warmup/` 有自己的构建链与校验脚本。搬动任何一个都不影响另一个。
+
+## 打开方式
+
+- **本地**：直接双击 `index.html`。两个游戏都只用了相对路径，`file://` 下能完整运行
+- **线上**：`https://neom987.github.io/warmup-cards/`（GitHub Pages，`main` / `(root)`）
+
+## 各自的文档
+
+- 心跳取证：[`heart/README.md`](heart/README.md)（怎么玩、怎么改）· [`heart/PROJECT.md`](heart/PROJECT.md)（为什么长成这样）
+- 升温：[`warmup/README.md`](warmup/README.md) · [`warmup/PROJECT.md`](warmup/PROJECT.md)
 
 ## 开发
 
 ```bash
-npm i                  # 只为了跑回归（jsdom / puppeteer-core）
-node tools/flow.js     # 主流程回归，jsdom，40 条断言，不需要浏览器
-node tools/shot.js --out shots/a.png --w 390 --h 844 --js "await click('#kTheme')"
+npm i                                  # 只为了跑回归（jsdom / puppeteer-core）
+cd heart && node tools/flow.js         # 心跳取证主流程，40 条断言，不需要浏览器
+cd warmup && python build.py           # 升温：src/ → index.html（单文件产物）
+cd warmup && python check_cards.py     # 升温卡片校验
 ```
 
-`tools/flow.js` 覆盖：待机页 / 牌库读数 / 主题切换与记忆 / 张数选择 / 校准 / 出牌 / 作答 /
-跳过 / 报告页各字段 / 再测一局不重复 / 改设置 / 一直抽与结束 / 重置牌库 / 无未捕获异常。
-
-`tools/shot.js` 用 CDP 驱动 headless Edge（spawn → `/json/list` → WebSocket），
-能真正等待、点击、读计算样式，比 `msedge --screenshot` 可靠。`tools/tabprobe.js` 是焦点诊断脚本。
-
-**没有构建步骤。** 改 `app.js` / `style.css` / `index.html` 刷新即生效；改牌库要同步改
-`data/*.json` 和 `cards.js`。
+`node_modules/` 放在仓库根，两个子项目里的脚本都能往上找到，不用各装一份。
 
 ## 第三方库
 
-chroma.js（色彩转换与 LCH 插值）与 anime.js（动效编排）都已复制进 `vendor/`，
-全部本地引入，**零网络请求**，断网、`file://` 双击都能完整运行。
+只有 `heart/vendor/` 里的 chroma.js 与 anime.js，已复制入库，本地引入。
+导航页本身零依赖、零请求。`warmup/` 的产物也是零依赖单文件。
 
 ## 许可
 
-代码 MIT。第三方库见 `vendor/` 内各自的许可证头。
+代码 MIT。字体为 SIL Open Font License 1.1，见 [`warmup/OFL.txt`](warmup/OFL.txt)。

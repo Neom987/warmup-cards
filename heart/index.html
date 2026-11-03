@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10140F">
+<title>心跳取证 · 双人真心话</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="rig">
+  <div class="device" id="device">
+
+    <div class="status">
+      <span class="led" id="led"></span>
+      <span class="mono">REC</span>
+      <span class="mono dim" id="statusCase">CASE 0000</span>
+      <span class="spacer"></span>
+      <button class="themebtn" id="kTheme" type="button" aria-pressed="false">夜</button>
+      <span class="mono dim" id="clock">--:--:--</span>
+    </div>
+
+    <div class="sheet" id="sheet">
+      <div class="holes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+      <div class="paper">
+        <header class="dochead">
+          <div class="row">
+            <span class="lbl">对象</span>
+            <span class="val" id="subjects">—</span>
+            <span class="mono num right" id="prog">00 / 00</span>
+          </div>
+          <div class="row">
+            <span class="lbl">张力</span>
+            <span class="bar"><i id="tbar"></i></span>
+            <span class="mono num" id="tval">0.00</span>
+          </div>
+        </header>
+
+        <main class="stage" id="stage" aria-live="polite"></main>
+
+        <div class="traceband">
+          <div class="chl mono" aria-hidden="true">
+            <span>CH1 皮电</span><span>CH2 呼吸</span><span>CH3 脉搏</span>
+          </div>
+          <canvas id="cv"></canvas>
+        </div>
+
+        <div class="timeline" id="timeline">
+          <i class="tlfill" id="tlfill"></i>
+          <span class="mono" id="tltext">0.0s</span>
+        </div>
+      </div>
+
+      <div class="stamp" id="stamp"><b>已记录</b><span class="mono" id="stamptime">--:--</span></div>
+    </div>
+
+    <div class="keys">
+      <button class="key wide" id="kAnswer"><span class="mono klab">ENTER</span><b>我答了</b></button>
+      <button class="key" id="kSkip"><b>跳过</b></button>
+      <button class="key" id="kTimer" hidden><b>计时</b><span class="mono klab" id="kTimerSec">10s</span></button>
+      <button class="key endkey" id="kEnd" hidden><b>结束</b></button>
+    </div>
+
+    <!-- 待机页 -->
+    <section class="layer" id="startLayer">
+      <div class="sheet">
+        <div class="holes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="paper start">
+          <div class="startbody">
+          <p class="mono kicker">POLYGRAPH T-2 · 待机</p>
+          <h1>心跳取证</h1>
+          <p class="lede">说真话的人，心跳会先招供。</p>
+
+          <div class="perf"></div>
+
+          <div class="field"><span>你的名字</span><input id="nameA" maxlength="6" value="你" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><span>对方</span><input id="nameB" maxlength="6" value="他" autocomplete="off" spellcheck="false"></div>
+
+          <div class="field"><span>本局</span>
+            <div class="seg" id="segTotal">
+              <button data-n="12" class="on">12 张</button>
+              <button data-n="24">24 张</button>
+              <button data-n="0">全部</button>
+              <button data-n="-1">一直抽</button>
+            </div>
+          </div>
+
+          <div class="field poolrow"><span>牌库</span>
+            <span class="poolval" id="poolInfo">—</span>
+            <button class="link mini" id="kReset" type="button">重置</button>
+          </div>
+
+          <p class="note">双方自愿。犹豫也算记录的一部分 —— 想久一点没关系。</p>
+
+          <div class="perf sep"></div>
+
+          <ol class="rules">
+            <li><b>01</b><span>抽到一张，念出声，然后回答。</span></li>
+            <li><b>02</b><span>答不上来就跳过，跳过也记一笔。</span></li>
+            <li><b>03</b><span>「一直抽」不会停，想收局按结束。</span></li>
+          </ol>
+          </div>
+
+          <div class="cal mono" id="cal"></div>
+          <button class="go" id="kStart">校准并开始</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 报告页 -->
+    <section class="layer" id="reportLayer" hidden>
+      <div class="sheet">
+        <div class="holes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="paper report">
+          <p class="mono kicker">SESSION REPORT · 已归档</p>
+          <h2>本次记录</h2>
+
+          <div class="stats">
+            <div class="stat"><b class="mono" id="rAns">0</b><span>回答</span></div>
+            <div class="stat"><b class="mono" id="rSkip">0</b><span>跳过</span></div>
+            <div class="stat"><b class="mono" id="rTime">0′</b><span>用时</span></div>
+          </div>
+
+          <div class="perf"></div>
+
+          <div class="kv"><span class="lbl">平均张力</span><b class="mono big" id="rTension">0.00</b></div>
+          <div class="kv"><span class="lbl">最长犹豫</span><b class="mono" id="rPeak">—</b><span class="kvv" id="rPeakTitle">—</span></div>
+          <div class="kv"><span class="lbl">本局编号</span><b class="mono" id="rCase">—</b></div>
+
+          <div class="peaks" id="rPeaks"></div>
+
+          <div class="stampbig" id="stampBig"><b>记录完毕</b><span class="mono" id="stampBigTime">--:--</span></div>
+
+          <div class="remark" aria-hidden="true">
+            <span class="lbl">备注</span>
+            <i></i><i></i><i></i><i></i>
+          </div>
+
+          <p class="endnote mono">— 本页记录到此为止 —</p>
+
+          <div class="again">
+            <button class="go" id="kAgain">再测一局</button>
+            <button class="link" id="kSetup">改设置</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="vendor/chroma.min.js" defer></script>
+<script src="vendor/anime.min.js" defer></script>
+<script src="cards.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

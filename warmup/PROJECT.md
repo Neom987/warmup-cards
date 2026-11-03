@@ -314,9 +314,9 @@ src/font.css ──┴─→ tools/apply_theme.py ─→ 内联进 app.html 的 
 
 - 仓库：`https://github.com/Neom987/warmup-cards`（Public，`main`）
 - 线上：`https://neom987.github.io/warmup-cards/warmup/`（Pages，Deploy from a branch → `main` / `(root)`）
-- **2026-11-02 位置变更**：本项目已移到仓库的 `warmup/` 子目录，根目录主项目换成「心跳取证」。
-  Pages 入口因此从 `/` 变成 `/warmup/`。`build.py` 用 `__file__` 定位源，搬完可直接构建，
-  产物与搬迁前字节一致（sha256 未变）。
+- **2026-11-02 位置变更**：本项目已移到仓库的 `warmup/` 子目录。
+  `build.py` 用 `__file__` 定位源，搬完可直接构建，产物与搬迁前字节一致（sha256 未变）。
+- **2026-11-03**：根目录改成二选一的导航页，本项目路径 `/warmup/` 不变
 - `.gitattributes` 里 `warmup/index.html -text`：否则 Windows 的 `core.autocrlf` 会把 CRLF 转 LF，线上文件与本地构建产物不一致
 
 ---

@@ -3,157 +3,415 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#10140F">
-<title>心跳取证 · 双人真心话</title>
-<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#0B0A0D">
+<title>今晚玩哪个 · 两个双人游戏</title>
+<style>
+/* ============================================================
+   两个游戏 · 导航
+   左边是纸（心跳取证），右边是灯（升温）。材料就是内容。
+   ============================================================ */
+
+:root {
+  --void: #0B0A0D;
+  --ink: #EDE8DF;
+  --dim: #8B8579;
+  --rule: rgba(237, 232, 223, .13);
+
+  /* 纸 */
+  --paper: #DFE4DE;
+  --paper-ink: #17201C;
+  --paper-dim: #4B564B;
+  --pen: #B93A28;
+  --pen-2: #2C5F7C;
+  --pen-3: #B8832B;
+  --grid: rgba(23, 32, 28, .075);
+
+  /* 灯 */
+  --gel: #150C13;
+  --rose: #FF7E9D;
+  --lilac: #C08CFF;
+  --mint: #7FE0B0;
+
+  --f-paper: "STZhongsong", "华文中宋", "Source Han Serif SC", "Songti SC", SimSun, serif;
+  --f-gel: "KaiTi", "STKaiti", "Kaiti SC", "楷体", "LXGW WenKai", serif;
+  --f-body: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --f-mono: Consolas, "SF Mono", ui-monospace, "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: clamp(22px, 4vh, 44px);
+  padding: clamp(22px, 4.5vw, 56px);
+  background:
+    radial-gradient(120% 90% at 78% -10%, #1A1220 0%, transparent 55%),
+    radial-gradient(90% 70% at 0% 110%, #10140F 0%, transparent 50%),
+    var(--void);
+  color: var(--ink);
+  font-family: var(--f-body);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 超宽屏不拉伸：内容封顶 1360，两侧留白交给背景 */
+body > * {
+  width: 100%;
+  max-width: 1360px;
+  margin-inline: auto;
+}
+
+/* ---------- 页头 ---------- */
+
+.head { min-width: 0; }
+
+.eyebrow {
+  margin: 0 0 clamp(14px, 2.4vh, 22px);
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(30px, 5.4vw, 52px);
+  font-weight: 400;
+  letter-spacing: .02em;
+  line-height: 1.12;
+  color: var(--ink);
+}
+
+.sub {
+  margin: clamp(12px, 2vh, 18px) 0 0;
+  max-width: 42ch;
+  font-size: clamp(13.5px, 1.5vw, 15px);
+  line-height: 1.75;
+  color: var(--dim);
+  text-wrap: pretty;
+}
+
+/* ---------- 两张 ---------- */
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 0;
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+  padding: clamp(22px, 3vw, 38px);
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform .5s cubic-bezier(.2, .8, .2, 1);
+}
+
+.panel > * { position: relative; z-index: 2; }
+
+.panel:focus-visible { outline: none; }
+
+/* 纸 ---------------------------------------------------------- */
+
+.paper {
+  --focus: var(--pen);
+  border-radius: 2px;
+  color: var(--paper-ink);
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 100% 23px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 23px 100%,
+    var(--paper);
+}
+
+.paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity .55s ease;
+  background: radial-gradient(75% 60% at 22% 100%, rgba(185, 58, 40, .16), transparent 70%);
+}
+
+.paper .kicker { color: var(--paper-dim); }
+.paper .desc { color: var(--paper-dim); }
+.paper .meta { color: var(--paper-dim); }
+.paper .title { font-family: var(--f-paper); color: var(--paper-ink); }
+.paper .go { color: var(--pen); border-color: rgba(185, 58, 40, .38); }
+
+.paper:focus-visible { outline: 2px solid var(--pen); outline-offset: -3px; }
+
+/* 灯 ---------------------------------------------------------- */
+
+.gel {
+  --focus: var(--rose);
+  border-radius: 2px;
+  color: var(--ink);
+  background: var(--gel);
+}
+
+.gel::before {
+  content: "";
+  position: absolute;
+  inset: -22%;
+  z-index: 0;
+  background:
+    radial-gradient(26% 30% at 27% 24%, rgba(255, 170, 198, .46) 0%, rgba(255, 126, 157, .2) 38%, transparent 68%),
+    radial-gradient(30% 34% at 72% 26%, rgba(208, 168, 255, .34) 0%, rgba(192, 140, 255, .15) 40%, transparent 70%),
+    radial-gradient(34% 32% at 58% 84%, rgba(152, 236, 198, .2) 0%, rgba(127, 224, 176, .09) 40%, transparent 72%);
+  transition: transform 1.1s cubic-bezier(.2, .8, .2, 1), opacity .6s ease;
+}
+
+.gel .kicker { color: rgba(237, 232, 223, .5); }
+.gel .desc { color: rgba(237, 232, 223, .62); }
+.gel .meta { color: rgba(237, 232, 223, .42); }
+.gel .title { font-family: var(--f-gel); color: #FFF3F6; }
+.gel .go { color: var(--rose); border-color: rgba(255, 126, 157, .42); }
+
+.gel:focus-visible { outline: 2px solid var(--rose); outline-offset: -3px; }
+
+/* 面板内容 ---------------------------------------------------- */
+
+.kicker {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: clamp(10px, 1.6vh, 16px) 0 0;
+  font-size: clamp(26px, 3.6vw, 40px);
+  font-weight: 400;
+  letter-spacing: .04em;
+  line-height: 1.2;
+}
+
+.desc {
+  margin: clamp(12px, 2vh, 18px) 0 0;
+  max-width: 30ch;
+  font-size: clamp(13px, 1.4vw, 14.5px);
+  line-height: 1.85;
+}
+
+.art {
+  flex: 1 1 auto;
+  min-height: 52px;
+  margin: clamp(16px, 2.6vh, 26px) 0;
+  display: flex;
+  align-items: center;
+}
+
+.gel .art { justify-content: flex-end; }
+
+.foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: clamp(12px, 1.8vh, 16px);
+  border-top: 1px solid currentColor;
+  border-color: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.meta {
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: .06em;
+}
+
+.go {
+  flex: 0 0 auto;
+  font-size: 13px;
+  letter-spacing: .08em;
+  padding: 5px 14px;
+  border: 1px solid;
+  border-radius: 999px;
+  transition: background-color .35s ease, color .35s ease;
+}
+
+/* 笔迹 -------------------------------------------------------- */
+
+.trace { width: 100%; height: 44px; display: block; }
+.trace path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.trace .c1 { stroke: var(--pen); stroke-width: 1.6; }
+.trace .c2 { stroke: var(--pen-2); stroke-width: 1.1; opacity: .5; }
+.trace .c3 { stroke: var(--pen-3); stroke-width: 1.1; opacity: .42; }
+
+/* 牌背 + 滤色盘 ------------------------------------------------ */
+
+.cardback {
+  width: 58px;
+  height: 80px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(158deg, #2A1830 0%, #180D1A 62%, #120A15 100%);
+  border: 1px solid rgba(255, 126, 157, .26);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, .45),
+    0 0 26px rgba(255, 126, 157, .13),
+    inset 0 0 20px rgba(192, 140, 255, .1);
+  transition: transform .6s cubic-bezier(.2, .8, .2, 1), box-shadow .6s ease;
+}
+
+.wheel {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--rose), var(--lilac), var(--mint), var(--rose));
+  -webkit-mask: radial-gradient(circle, transparent 56%, #000 58%);
+  mask: radial-gradient(circle, transparent 56%, #000 58%);
+  opacity: .78;
+  transition: transform 1.4s cubic-bezier(.2, .8, .2, 1), opacity .5s ease;
+}
+
+/* ---------- 悬停 ---------- */
+
+@media (hover: hover) {
+  .panel:hover { transform: translateY(-3px); }
+  .paper:hover::before { opacity: 1; }
+  .paper:hover .trace .c1 { stroke-width: 2; }
+  .gel:hover::before { transform: scale(1.08); opacity: 1.05; }
+  .gel:hover .cardback {
+    transform: rotate(-6deg) translateY(-4px);
+    box-shadow:
+      0 16px 38px rgba(0, 0, 0, .5),
+      0 0 40px rgba(255, 126, 157, .26),
+      inset 0 0 22px rgba(192, 140, 255, .16);
+  }
+  .gel:hover .wheel { transform: rotate(150deg); opacity: 1; }
+  .paper:hover .go { background: var(--pen); color: var(--paper); }
+  .gel:hover .go { background: var(--rose); color: #2A0B14; }
+}
+
+/* ---------- 页脚 ---------- */
+
+.tail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 22px;
+  padding-top: clamp(14px, 2vh, 18px);
+  border-top: 1px solid var(--rule);
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--dim);
+}
+
+.tail a {
+  color: var(--dim);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  transition: color .3s ease, border-color .3s ease;
+}
+.tail a:hover, .tail a:focus-visible { color: var(--ink); border-color: var(--ink); }
+.tail a:focus-visible { outline: 2px solid var(--rose); outline-offset: 3px; }
+
+/* ---------- 窄屏 ---------- */
+
+@media (max-width: 700px) {
+  body {
+    grid-template-rows: auto auto auto;
+    gap: 26px;
+    padding: 26px 20px 30px;
+  }
+  .pair { grid-template-columns: 1fr; gap: 12px; }
+  .panel { min-height: 0; padding: 24px 22px; }
+  .art { margin: 16px 0; min-height: 40px; }
+}
+
+/* ---------- 动效 ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel { opacity: 0; transform: translateY(14px); animation: rise .8s cubic-bezier(.2, .8, .2, 1) forwards; }
+  .paper { animation-delay: .06s; }
+  .gel { animation-delay: .16s; }
+
+  .trace .c1 { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.5s cubic-bezier(.4, 0, .2, 1) .5s forwards; }
+
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  @media (hover: hover) {
+    .panel:hover { animation: none; opacity: 1; transform: translateY(-3px); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel { opacity: 1; transform: none; }
+  .trace .c1 { stroke-dasharray: none; }
+}
+</style>
 </head>
 <body>
 
-<div class="rig">
-  <div class="device" id="device">
+<header class="head">
+  <p class="eyebrow">A Game For Two</p>
+  <h1>今晚玩哪个</h1>
+  <p class="sub">两个都是两个人的游戏，都在这一台手机上玩，都不联网、不上传任何东西。选一个进去。</p>
+</header>
 
-    <div class="status">
-      <span class="led" id="led"></span>
-      <span class="mono">REC</span>
-      <span class="mono dim" id="statusCase">CASE 0000</span>
-      <span class="spacer"></span>
-      <button class="themebtn" id="kTheme" type="button" aria-pressed="false">夜</button>
-      <span class="mono dim" id="clock">--:--:--</span>
+<main class="pair">
+
+  <a class="panel paper" href="heart/index.html">
+    <p class="kicker">Polygraph · 说真话</p>
+    <h2 class="title">心跳取证</h2>
+    <p class="desc">抽一张真心话，念出声，然后回答。你在一张牌上停得越久，波形抖得越厉害，纸也越烫。</p>
+
+    <div class="art" aria-hidden="true">
+      <svg class="trace" viewBox="0 0 300 44" preserveAspectRatio="none">
+        <path class="c1" pathLength="1"
+          d="M0 26 H44 L48 26 L51 16 L54 36 L57 26 L62 26 H104 L108 26 L111 16 L114 36 L117 26 L122 26 H164 L168 26 L171 16 L174 36 L177 26 L182 26 H224 L228 26 L231 16 L234 36 L237 26 L242 26 H300" />
+        <path class="c2" d="M0 32 C 30 28, 52 35, 80 31 S 132 25, 160 32 S 212 36, 240 30 S 276 27, 300 32" />
+        <path class="c3" d="M0 12 C 26 16, 46 9, 72 14 S 124 18, 152 11 S 204 7, 232 14 S 272 17, 300 12" />
+      </svg>
     </div>
 
-    <div class="sheet" id="sheet">
-      <div class="holes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="foot">
+      <span class="meta">92 张牌 · 日间 / 暗夜</span>
+      <span class="go">进去 →</span>
+    </div>
+  </a>
 
-      <div class="paper">
-        <header class="dochead">
-          <div class="row">
-            <span class="lbl">对象</span>
-            <span class="val" id="subjects">—</span>
-            <span class="mono num right" id="prog">00 / 00</span>
-          </div>
-          <div class="row">
-            <span class="lbl">张力</span>
-            <span class="bar"><i id="tbar"></i></span>
-            <span class="mono num" id="tval">0.00</span>
-          </div>
-        </header>
+  <a class="panel gel" href="warmup/index.html">
+    <p class="kicker">Deck · 抽卡</p>
+    <h2 class="title">升温</h2>
+    <p class="desc">开局先定好这一晚的规则，然后一张接一张：翻牌，照做，或者跳过。换一张卡，整屋换一个颜色。</p>
 
-        <main class="stage" id="stage" aria-live="polite"></main>
-
-        <div class="traceband">
-          <div class="chl mono" aria-hidden="true">
-            <span>CH1 皮电</span><span>CH2 呼吸</span><span>CH3 脉搏</span>
-          </div>
-          <canvas id="cv"></canvas>
-        </div>
-
-        <div class="timeline" id="timeline">
-          <i class="tlfill" id="tlfill"></i>
-          <span class="mono" id="tltext">0.0s</span>
-        </div>
-      </div>
-
-      <div class="stamp" id="stamp"><b>已记录</b><span class="mono" id="stamptime">--:--</span></div>
+    <div class="art" aria-hidden="true">
+      <div class="cardback"><div class="wheel"></div></div>
     </div>
 
-    <div class="keys">
-      <button class="key wide" id="kAnswer"><span class="mono klab">ENTER</span><b>我答了</b></button>
-      <button class="key" id="kSkip"><b>跳过</b></button>
-      <button class="key" id="kTimer" hidden><b>计时</b><span class="mono klab" id="kTimerSec">10s</span></button>
-      <button class="key endkey" id="kEnd" hidden><b>结束</b></button>
+    <div class="foot">
+      <span class="meta">615 张牌 · 六种抽法</span>
+      <span class="go">进去 →</span>
     </div>
+  </a>
 
-    <!-- 待机页 -->
-    <section class="layer" id="startLayer">
-      <div class="sheet">
-        <div class="holes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="paper start">
-          <div class="startbody">
-          <p class="mono kicker">POLYGRAPH T-2 · 待机</p>
-          <h1>心跳取证</h1>
-          <p class="lede">说真话的人，心跳会先招供。</p>
+</main>
 
-          <div class="perf"></div>
+<footer class="tail">
+  <span>18+ · 请在双方都同意、随时可以说停的前提下使用。</span>
+  <span>源码在 <a href="https://github.com/Neom987/warmup-cards">GitHub</a></span>
+</footer>
 
-          <div class="field"><span>你的名字</span><input id="nameA" maxlength="6" value="你" autocomplete="off" spellcheck="false"></div>
-          <div class="field"><span>对方</span><input id="nameB" maxlength="6" value="他" autocomplete="off" spellcheck="false"></div>
-
-          <div class="field"><span>本局</span>
-            <div class="seg" id="segTotal">
-              <button data-n="12" class="on">12 张</button>
-              <button data-n="24">24 张</button>
-              <button data-n="0">全部</button>
-              <button data-n="-1">一直抽</button>
-            </div>
-          </div>
-
-          <div class="field poolrow"><span>牌库</span>
-            <span class="poolval" id="poolInfo">—</span>
-            <button class="link mini" id="kReset" type="button">重置</button>
-          </div>
-
-          <p class="note">双方自愿。犹豫也算记录的一部分 —— 想久一点没关系。</p>
-
-          <div class="perf sep"></div>
-
-          <ol class="rules">
-            <li><b>01</b><span>抽到一张，念出声，然后回答。</span></li>
-            <li><b>02</b><span>答不上来就跳过，跳过也记一笔。</span></li>
-            <li><b>03</b><span>「一直抽」不会停，想收局按结束。</span></li>
-          </ol>
-          </div>
-
-          <div class="cal mono" id="cal"></div>
-          <button class="go" id="kStart">校准并开始</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 报告页 -->
-    <section class="layer" id="reportLayer" hidden>
-      <div class="sheet">
-        <div class="holes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="paper report">
-          <p class="mono kicker">SESSION REPORT · 已归档</p>
-          <h2>本次记录</h2>
-
-          <div class="stats">
-            <div class="stat"><b class="mono" id="rAns">0</b><span>回答</span></div>
-            <div class="stat"><b class="mono" id="rSkip">0</b><span>跳过</span></div>
-            <div class="stat"><b class="mono" id="rTime">0′</b><span>用时</span></div>
-          </div>
-
-          <div class="perf"></div>
-
-          <div class="kv"><span class="lbl">平均张力</span><b class="mono big" id="rTension">0.00</b></div>
-          <div class="kv"><span class="lbl">最长犹豫</span><b class="mono" id="rPeak">—</b><span class="kvv" id="rPeakTitle">—</span></div>
-          <div class="kv"><span class="lbl">本局编号</span><b class="mono" id="rCase">—</b></div>
-
-          <div class="peaks" id="rPeaks"></div>
-
-          <div class="stampbig" id="stampBig"><b>记录完毕</b><span class="mono" id="stampBigTime">--:--</span></div>
-
-          <div class="remark" aria-hidden="true">
-            <span class="lbl">备注</span>
-            <i></i><i></i><i></i><i></i>
-          </div>
-
-          <p class="endnote mono">— 本页记录到此为止 —</p>
-
-          <div class="again">
-            <button class="go" id="kAgain">再测一局</button>
-            <button class="link" id="kSetup">改设置</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </div>
-</div>
-
-<script src="vendor/chroma.min.js" defer></script>
-<script src="vendor/anime.min.js" defer></script>
-<script src="cards.js" defer></script>
-<script src="app.js" defer></script>
 </body>
 </html>

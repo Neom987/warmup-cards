@@ -1,8 +1,8 @@
 # 升温 · A Game For Two
 
-> **位置变更（2026-11-02）**：这个项目已从仓库根目录移到 `warmup/`，
-> 根目录的主项目换成了「心跳取证」。下面的命令都在 `warmup/` 目录里执行
-> （`cd warmup && python build.py`）。线上地址是 `https://neom987.github.io/warmup-cards/warmup/`。
+> **位置（2026-11-03）**：本项目在仓库的 `warmup/` 目录下，另一个游戏「心跳取证」在 `heart/`，
+> 根目录是一张二选一的导航页。下面的命令都在 `warmup/` 目录里执行（`cd warmup && python build.py`）。
+> 线上地址是 `https://neom987.github.io/warmup-cards/warmup/`。
 
 一个给两个人的抽卡小游戏。开局先定好这一晚的规则（模式、上限、张数），然后一张接一张：翻牌，照做，或者跳过。
 
